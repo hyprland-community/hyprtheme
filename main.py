@@ -56,6 +56,7 @@ class Theme:
             'subthemes': [theme.to_dict() for theme in self.subthemes]
         }
 
+
 class HyprTheme:
     def __init__(self):
         self.themes = []
@@ -68,6 +69,7 @@ class HyprTheme:
     def parse_themes(self):
         for theme in self.themes:
             theme.parse()
+            
 
 if __name__ == '__main__':
     hypr = HyprTheme()

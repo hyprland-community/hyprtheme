@@ -26,7 +26,11 @@ fn parse_theme(theme: &str) -> Result<PathBuf, String> {
         if path.is_dir() {
             let dir_name = path.file_name().unwrap().to_str().unwrap();
             if dir_name == theme {
-                return Ok(path);
+                if path.join("theme.toml").exists() {
+                    return Ok(path.join("theme.toml"));
+                }else{
+                    return Err(format!("Theme {} is missing theme.toml", theme));
+                }
             }
         }
     }

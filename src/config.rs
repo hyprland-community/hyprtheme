@@ -1,6 +1,6 @@
 use crate::theme::Theme;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Component {
     name: String,
     comment: String,

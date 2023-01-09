@@ -5,18 +5,18 @@ use toml;
 
 use crate::config::Component;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 pub struct Theme {
-    conf: PathBuf,
-    name: String,
-    desc: String,
-    author: String,
-    git: String,
-    version: String,
-    subthemes: Vec<Theme>,
-    default_subtheme: String,
-    components: Vec<Component>,
-    path: PathBuf,
+    pub conf: PathBuf,
+    pub name: String,
+    pub desc: String,
+    pub author: String,
+    pub git: String,
+    pub version: String,
+    pub subthemes: Vec<Theme>,
+    pub default_subtheme: String,
+    pub components: Vec<Component>,
+    pub path: PathBuf,
 }
 
 impl Theme {

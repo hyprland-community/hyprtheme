@@ -14,6 +14,7 @@ fn main() {
         Hyprtheme::Apply(apply) => {
             let t = Theme::from_file(apply.theme);
             println!("{:#?}", t);
+            socket::apply(t);
         }
     }
 }

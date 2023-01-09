@@ -1,3 +1,5 @@
+use crate::theme::Theme;
+
 #[derive(Debug)]
 pub struct Component {
     name: String,
@@ -5,3 +7,28 @@ pub struct Component {
     pos: (u32, u32),
     enabled: bool,
 }
+
+#[derive(Debug)]
+pub struct Variable {
+    name: String,
+    comment: String,
+    value: String,
+    var_type: VarType,
+    pos: (u32, u32)
+}
+
+#[derive(Debug)]
+pub enum VarType {
+    Slider,
+    Text,
+    Color,
+}
+
+pub struct Config{
+    raw: String,
+    theme: Theme
+}
+
+
+
+

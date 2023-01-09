@@ -8,5 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.0", features = ["derive", "wrap_help", "env"] }
 expanduser = "1.2.2"
+hyprland = "0.2.4"
 pathdiff = "0.2.1"
+regex = "1.7.0"
 toml = "0.5.10"

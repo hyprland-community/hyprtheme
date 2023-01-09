@@ -14,6 +14,7 @@ pub struct Theme {
     git: String,
     version: String,
     subthemes: Vec<Theme>,
+    default_subtheme: String,
     components: Vec<Component>,
     path: PathBuf,
 }
@@ -92,6 +93,11 @@ impl Theme {
             None => String::new(),
         };
 
+        let default_subtheme = match theme_info.get("default_subtheme") {
+            Some(default_subtheme) => default_subtheme.as_str().unwrap().to_string(),
+            None => String::new(),
+        };
+
         Theme {
             name,
             desc,
@@ -102,6 +108,7 @@ impl Theme {
             subthemes,
             components,
             path,
+            default_subtheme,
         }
     }
 }

@@ -1,20 +1,18 @@
 use clap::Parser;
-use std::path::{PathBuf, self};
 use expanduser;
+use std::path::{self, PathBuf};
 
 #[derive(Parser)]
-#[command(version,name="hyprtheme")]
-pub enum Hyprtheme{
+#[command(version, name = "hyprtheme")]
+pub enum Hyprtheme {
     Apply(Apply),
 }
 
 #[derive(Parser)]
-pub struct  Apply{
-
+pub struct Apply {
     #[arg(value_parser=parse_theme)]
     pub theme: PathBuf,
-
-}  
+}
 
 fn parse_theme(theme: &str) -> Result<PathBuf, String> {
     // expand user
@@ -28,7 +26,7 @@ fn parse_theme(theme: &str) -> Result<PathBuf, String> {
             if dir_name == theme {
                 if path.join("theme.toml").exists() {
                     return Ok(path.join("theme.toml"));
-                }else{
+                } else {
                     return Err(format!("Theme {} is missing theme.toml", theme));
                 }
             }

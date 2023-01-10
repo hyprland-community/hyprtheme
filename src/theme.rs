@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use toml;
 
-use crate::config::Component;
+use crate::config::{Component,Config};
 
 #[derive(Debug,Clone)]
 pub struct Theme {
@@ -16,10 +16,16 @@ pub struct Theme {
     pub subthemes: Vec<Theme>,
     pub default_subtheme: String,
     pub components: Vec<Component>,
+    pub hyprpaper: PathBuf,
     pub path: PathBuf,
 }
 
 impl Theme {
+    pub fn config_from_file(path: PathBuf) -> Config{
+        let theme = Theme::from_file(path);
+        Config::from_theme(theme)
+    }
+
     pub fn from_file(path: PathBuf) -> Theme {
         let raw = fs::read_to_string(&path).expect("Unable to read file");
         let config = raw.parse::<toml::Value>().expect("Unable to parse toml");
@@ -68,6 +74,20 @@ impl Theme {
             }
         };
 
+        let hyprpaper = match theme_info.get("hyprpaper") {
+            Some(hyprpaper) => {
+                let hyprpaper = hyprpaper.as_str().unwrap();
+                if hyprpaper == "" {
+                    Path::new("").to_path_buf()
+                } else {
+                    path.parent()
+                        .expect("theme has no parent directory")
+                        .join(hyprpaper.replace("./", ""))
+                }
+            }
+            None => Path::new("").to_path_buf(),
+        };
+
         let name = match theme_info.get("name") {
             Some(name) => name.as_str().unwrap().to_string(),
             None => String::new(),
@@ -109,6 +129,7 @@ impl Theme {
             components,
             path,
             default_subtheme,
+            hyprpaper,
         }
     }
 }

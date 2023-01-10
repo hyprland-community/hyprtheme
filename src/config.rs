@@ -25,8 +25,12 @@ pub enum VarType {
 }
 
 pub struct Config{
-    raw: String,
-    theme: Theme
+    pub raw: String,
+    pub theme: Theme
+}
+
+impl Config{
+    pub fn 
 }
 
 

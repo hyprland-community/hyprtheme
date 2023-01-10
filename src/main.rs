@@ -3,7 +3,7 @@ use clap::Parser;
 mod cli;
 mod config;
 mod theme;
-mod socket;
+mod hypr;
 
 use cli::Hyprtheme;
 use theme::Theme;
@@ -13,8 +13,8 @@ fn main() {
     match hyprtheme {
         Hyprtheme::Apply(apply) => {
             let t = apply.theme;
-            println!("{:#?}", t);
-            socket::apply(t);
+            println!("applying...");
+            hypr::apply(t);
         }
     }
 }

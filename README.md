@@ -28,3 +28,8 @@ a variable named `$THEME_DIR` will be passed to config files that can be used to
 
 + list [-d,--deep]
  > `--deep` also lists subthemes
+
+example:
+> a waybar button that switches active theme using hyprtheme
+https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-907c-5b151f9f7b85.mp4
+

@@ -3,8 +3,9 @@
 works with themes installed at `~/.config/hypr/themes`
 
 ## theme.toml
-this file is required to be present at the root of your theme folder
-example toml
+this file is required to be present at the root of yourtheme folder
+
+> example toml
 ```toml
 [theme]
 name = "print"

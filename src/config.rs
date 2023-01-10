@@ -30,7 +30,9 @@ pub struct Config{
 }
 
 impl Config{
-    pub fn 
+    pub fn build(){
+        
+    }
 }
 
 

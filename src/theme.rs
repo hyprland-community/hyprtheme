@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 
 use toml;
 
-use crate::config::{Component,Config};
+use crate::config::{Component, Config};
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Theme {
     pub conf: PathBuf,
     pub name: String,
@@ -21,7 +21,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn config_from_file(path: PathBuf) -> Config{
+    pub fn config_from_file(path: PathBuf) -> Config {
         let theme = Theme::from_file(path);
         Config::from_theme(theme)
     }

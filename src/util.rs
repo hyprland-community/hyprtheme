@@ -1,36 +1,38 @@
 use crate::theme::Theme;
-use std::{path::{self, PathBuf}};
 use expanduser;
+use std::path::{self, PathBuf};
 
-pub struct ThemeMap{
-    pub name:String,
-    pub subthemes:Vec<ThemeMap>,
+pub struct ThemeMap {
+    pub name: String,
+    pub subthemes: Vec<ThemeMap>,
 }
 
-impl ThemeMap{
-    pub fn from_theme(theme:Theme)->ThemeMap{
-        let mut subthemes:Vec<ThemeMap> = Vec::new();
+impl ThemeMap {
+    pub fn from_theme(theme: Theme) -> ThemeMap {
+        let mut subthemes: Vec<ThemeMap> = Vec::new();
 
-        for subtheme in theme.subthemes.iter(){
+        for subtheme in theme.subthemes.iter() {
             subthemes.push(ThemeMap::from_theme(subtheme.clone()));
         }
-        ThemeMap{
+        ThemeMap {
             name: theme.name,
-            subthemes: subthemes
-                
+            subthemes: subthemes,
         }
     }
 
-    pub fn display(&self)->String{
+    pub fn display(&self) -> String {
         let mut out = self.name.to_owned();
-        if self.subthemes.len() > 0{
+        if self.subthemes.len() > 0 {
             out.push_str(":");
 
-            for subtheme in self.subthemes.iter(){
+            for subtheme in self.subthemes.iter() {
                 let subtheme_display = subtheme.display();
-                let l = subtheme_display.split("\n").into_iter().collect::<Vec<&str>>();
-                for line in l.iter(){
-                    out.push_str(&format!("\n  {}",line))
+                let l = subtheme_display
+                    .split("\n")
+                    .into_iter()
+                    .collect::<Vec<&str>>();
+                for line in l.iter() {
+                    out.push_str(&format!("\n  {}", line))
                 }
             }
         }
@@ -38,19 +40,19 @@ impl ThemeMap{
     }
 }
 
-pub fn get_subtheme(theme:&Theme)->Option<Theme>{
-    let subtheme_str= &theme.default_subtheme;
+pub fn get_subtheme(theme: &Theme) -> Option<Theme> {
+    let subtheme_str = &theme.default_subtheme;
 
-    if !subtheme_str.trim().is_empty(){
+    if !subtheme_str.trim().is_empty() {
         let nest = subtheme_str.split(":").into_iter().collect::<Vec<&str>>();
 
         let mut subtheme = theme.subthemes.iter().find(|t| t.name == nest[0]).unwrap();
 
-        for n in nest.iter().skip(1){
+        for n in nest.iter().skip(1) {
             subtheme = subtheme.subthemes.iter().find(|t| t.name == *n).unwrap();
         }
 
-        return Some(subtheme.clone())
+        return Some(subtheme.clone());
     }
     None
 }
@@ -76,10 +78,10 @@ pub fn find_theme(theme: &str) -> Result<PathBuf, String> {
     Err(format!("Theme {} not found", theme))
 }
 
-pub fn list_themes() -> Vec<String>{
+pub fn list_themes() -> Vec<String> {
     let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
     let mut themes: Vec<String> = Vec::new();
-    
+
     for entry in theme_dir.read_dir().unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -92,10 +94,10 @@ pub fn list_themes() -> Vec<String>{
     themes
 }
 
-pub fn list_themes_deep() -> Vec<ThemeMap>{
+pub fn list_themes_deep() -> Vec<ThemeMap> {
     let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
     let mut themes: Vec<ThemeMap> = Vec::new();
-    
+
     for entry in theme_dir.read_dir().unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();

@@ -20,6 +20,8 @@ hyprpaper = "path_to_hyprpaper_conf.conf"
 ```
 > note all paths will be relative to your toml file path
 
+a variable named `$THEME_DIR` will be passed to config files that can be used to link to other files inside theme folder
+
 ## Commands
 + apply \<theme-name\>
  > theme-name can also contain `:` which represent subthemes, ie `print:dark` will represent `print` theme with subtheme `dark`

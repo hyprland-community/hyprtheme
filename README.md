@@ -8,7 +8,7 @@ this file is required to be present at the root of yourtheme folder
 > example toml
 ```toml
 [theme]
-name = "print"
+name = "fancy theme name"
 desc = "a very nice theme description"
 version = "0.00001"
 author = "me!"

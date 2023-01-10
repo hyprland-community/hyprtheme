@@ -56,7 +56,7 @@ impl Config {
                         theme.conf.parent().unwrap().to_str().unwrap(),
                         fs::read_to_string(&theme.hyprpaper)
                             .expect("Unable to read from theme config file")
-                            .as_str()
+                            .as_str().replace("$THEME_DIR", "$__THEME_DIR")
                     )
                 } else {
                     String::new()

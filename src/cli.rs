@@ -1,6 +1,7 @@
 use clap::Parser;
 use expanduser;
-use std::path::{self, PathBuf};
+use std::{path::{self, PathBuf}};
+use crate::theme::Theme;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -11,10 +12,28 @@ pub enum Hyprtheme {
 #[derive(Parser)]
 pub struct Apply {
     #[arg(value_parser=parse_theme)]
-    pub theme: PathBuf,
+    pub theme: Theme,
 }
 
-fn parse_theme(theme: &str) -> Result<PathBuf, String> {
+fn parse_theme(theme_name: &str) -> Result<Theme, String> {
+
+    let nest = theme_name.split(":").into_iter().collect::<Vec<&str>>();
+
+    match find_theme(nest[0]){
+        Ok(theme_path) => {
+            let mut t = Theme::from_file(theme_path);
+            if nest.len() > 1 {
+                t.default_subtheme = nest[1..].join(":");
+            }
+            Ok(t)
+        },
+        Err(e) => return Err(e),
+    }
+
+
+}
+
+fn find_theme(theme: &str) -> Result<PathBuf, String> {
     // expand user
     let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
 

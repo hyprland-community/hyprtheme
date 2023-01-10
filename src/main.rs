@@ -12,7 +12,7 @@ fn main() {
     let hyprtheme = Hyprtheme::parse();
     match hyprtheme {
         Hyprtheme::Apply(apply) => {
-            let t = Theme::from_file(apply.theme);
+            let t = apply.theme;
             println!("{:#?}", t);
             socket::apply(t);
         }

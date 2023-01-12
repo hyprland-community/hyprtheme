@@ -29,6 +29,10 @@ a variable named `$THEME_DIR` will be passed to config files that can be used to
 + list [-d,--deep]
  > `--deep` also lists subthemes
 
++ repo
+  + list
+  + install \<theme-name\>
+
 ## examples
 
 

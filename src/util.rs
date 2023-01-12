@@ -1,6 +1,8 @@
 use crate::theme::Theme;
 use expanduser;
-use std::path::{self, PathBuf};
+use std::{path::{self, PathBuf, Path}, io::BufReader,process};
+use gitmodules;
+use reqwest;
 
 pub struct ThemeMap {
     pub name: String,
@@ -109,4 +111,57 @@ pub fn list_themes_deep() -> Vec<ThemeMap> {
         }
     }
     themes
+}
+
+pub struct Repo {}
+
+impl Repo {
+    pub fn list_themes() -> Vec<Theme>{
+        let modules_url = "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
+        let raw = reqwest::blocking::get(modules_url).unwrap().text().unwrap();
+        let bytereader = BufReader::new(raw.as_bytes());
+        let modules = gitmodules::read_gitmodules(bytereader).unwrap();
+        let mut themes = Vec::new();
+        for module in modules.iter() {
+            let theme_url = module.entries().iter().find(|e| e.0 == "url").unwrap().to_owned().1; 
+            let theme_info = reqwest::blocking::get(theme_url.to_owned() + "/blob/master/theme.toml?raw=true").unwrap().text().unwrap();
+            let mut theme = Theme::from_string(theme_info,Path::new("/tmp").to_path_buf());
+            if theme._repo.is_none() {
+                theme._repo = Some(theme_url);
+            }
+            themes.push(theme);
+        }
+        themes
+    }
+
+    pub fn list_themes_deep() -> Vec<ThemeMap> {
+        let mut themes: Vec<ThemeMap> = Vec::new();
+        for theme in Repo::list_themes().iter() {
+            themes.push(ThemeMap::from_theme(theme.clone()));
+        }
+        themes
+    }
+
+    pub fn install_theme(theme_name:&str) -> Result<PathBuf,String> {
+        let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
+
+        let themes = Repo::list_themes();
+
+        let theme = themes.iter().find(|t| t.name == theme_name);
+
+        match theme {
+            Some(t) => {
+                process::Command::new("git")
+                    .arg("clone")
+                    .arg(t._repo.as_ref().unwrap())
+                    .arg(&theme_dir.join(&t.name))
+                    .output()
+                    .expect("failed to execute process");
+                Ok(theme_dir.join(&t.name))
+            }
+            None => {
+                Err(format!("Theme {} not found", theme_name))
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@ use clap::Parser;
 pub enum Hyprtheme {
     Apply(Apply),
     List(List),
+    Repo(Repo),
 }
 
 #[derive(Parser)]
@@ -34,3 +35,33 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
         Err(e) => return Err(e),
     }
 }
+
+#[derive(clap::Subcommand)]
+pub enum RepoSubcommand {
+    Install(Install),
+    Remove(Remove),
+    List(List),
+}
+
+#[derive(Parser)]
+pub struct Install {
+    #[arg()]
+    pub theme: String,
+}
+
+#[derive(Parser)]
+pub struct Remove {
+    #[arg()]
+    pub theme: String,
+}
+
+#[derive(Parser)]
+pub struct Repo {
+    #[command(subcommand)]
+    pub subcommand: Option<RepoSubcommand>,
+
+    #[arg()]
+    pub theme: Option<String>
+}
+
+

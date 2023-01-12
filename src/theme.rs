@@ -3,11 +3,11 @@ use std::path::{Path, PathBuf};
 
 use toml;
 
-use crate::config::{Component, Config};
+use crate::config::Config;
 
 #[derive(Debug, Clone)]
 pub struct Theme {
-    pub conf: PathBuf,
+    pub config_path: PathBuf,
     pub name: String,
     pub desc: String,
     pub author: String,
@@ -15,23 +15,15 @@ pub struct Theme {
     pub version: String,
     pub subthemes: Vec<Theme>,
     pub default_subtheme: String,
-    pub components: Vec<Component>,
-    pub hyprpaper: PathBuf,
-    pub path: PathBuf,
+    pub _repo: Option<String>,
+    pub _path: PathBuf,
 }
 
 impl Theme {
-    pub fn config_from_file(path: PathBuf) -> Config {
-        let theme = Theme::from_file(path);
-        Config::from_theme(theme)
-    }
-
-    pub fn from_file(path: PathBuf) -> Theme {
-        let raw = fs::read_to_string(&path).expect("Unable to read file");
+    pub fn parse_config(raw: String,path: PathBuf) -> Theme {
         let config = raw.parse::<toml::Value>().expect("Unable to parse toml");
 
         let mut subthemes: Vec<Theme> = Vec::new();
-        let mut components: Vec<Component> = Vec::new();
 
         let theme_info = match config.get("theme") {
             Some(theme_info) => theme_info,
@@ -55,7 +47,7 @@ impl Theme {
             None => {}
         };
 
-        let conf = match theme_info.get("conf") {
+        let config_path = match theme_info.get("config") {
             Some(conf) => {
                 let conf = conf.as_str().expect("subtheme is not a string");
                 if conf == "" && subthemes.len() < 1 {
@@ -72,20 +64,6 @@ impl Theme {
                     Path::new("").to_path_buf()
                 }
             }
-        };
-
-        let hyprpaper = match theme_info.get("hyprpaper") {
-            Some(hyprpaper) => {
-                let hyprpaper = hyprpaper.as_str().unwrap();
-                if hyprpaper == "" {
-                    Path::new("").to_path_buf()
-                } else {
-                    path.parent()
-                        .expect("theme has no parent directory")
-                        .join(hyprpaper.replace("./", ""))
-                }
-            }
-            None => Path::new("").to_path_buf(),
         };
 
         let name = match theme_info.get("name") {
@@ -121,15 +99,23 @@ impl Theme {
         Theme {
             name,
             desc,
-            conf,
+            config_path,
             author,
             git,
             version,
             subthemes,
-            components,
-            path,
+            _repo: None,
+            _path: path,
             default_subtheme,
-            hyprpaper,
         }
+    }
+
+    pub fn from_file(path: PathBuf) -> Theme {
+        let raw = fs::read_to_string(&path).expect("Unable to read file");
+        Theme::parse_config(raw,path)
+    }
+
+    pub fn from_string(raw: String,path: PathBuf) -> Theme {
+        Theme::parse_config(raw,path)
     }
 }

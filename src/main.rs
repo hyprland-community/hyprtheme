@@ -25,5 +25,41 @@ fn main() {
                 util::list_themes().iter().for_each(|t| println!("{}", t));
             }
         }
+        Hyprtheme::Repo(repo) => {
+            match repo.theme {
+                Some(theme) => {
+                    println!("theme: {}", theme);
+                }
+                None => {
+                    match repo.subcommand {
+                        Some(subcommand ) =>{
+                            match subcommand {
+                                cli::RepoSubcommand::Install(install) => {
+                                    println!("installing: {}", install.theme);
+                                    match util::Repo::install_theme(install.theme.as_str()){
+                                        Ok(_) => println!("installed: {}", install.theme),
+                                        Err(e) => println!("error: {}", e),
+                                    };
+                                }
+                                cli::RepoSubcommand::Remove(remove) => {
+                                    println!("removing: {}", remove.theme);
+                                }
+                                cli::RepoSubcommand::List(_) => {
+                                    for theme in util::Repo::list_themes_deep() {
+                                        println!("{}",theme.display());
+                                    }
+                                }
+                            }
+                        }
+                        None => {
+                            for theme in util::Repo::list_themes_deep() {
+                                println!("{}",theme.display());
+                            }
+                        }
+                    };
+                }
+            };
+        }
+            
     }
 }

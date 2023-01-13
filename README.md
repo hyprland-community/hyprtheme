@@ -1,6 +1,8 @@
-# hyprtheme
+# Hyprtheme
 
 works with themes installed at `~/.config/hypr/themes`
+
+additional themes can be installed from [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo)
 
 ## theme.toml
 this file is required to be present at the root of your theme folder
@@ -36,10 +38,10 @@ Options:
   -h, --help     Print help information
   -V, --version  Print version information
 
-## wiki
+## Wiki
 https://github.com/hyprland-community/theme-repo/wiki
 
-## install
+## Install
 
 > from git
 ```
@@ -48,9 +50,19 @@ cd hyprtheme
 sudo make all
 ```
 
-## examples
+## Example
 
 https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-907c-5b151f9f7b85.mp4
 
 > a waybar button that switches active theme using hyprtheme
+
+
+## Todo
+
+- [ ] better cli
+- [ ] async requests
+- [ ] handle dependancies for themes
+- [ ] aur pkg
+- [ ] control value of variables in theme
+- [ ] control which components to enable in theme
 

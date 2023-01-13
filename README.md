@@ -39,8 +39,16 @@ Options:
 ## wiki
 https://github.com/hyprland-community/theme-repo/wiki
 
-## examples
+## install
 
+> from git
+```
+git clone https://github.com/hyprland-community/hyprtheme
+cd hyprtheme
+sudo make all
+```
+
+## examples
 
 https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-907c-5b151f9f7b85.mp4
 

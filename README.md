@@ -13,7 +13,7 @@ desc = "a very nice theme description"
 version = "0.00001"
 author = "me!"
 git = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-conf = "path_to_hyprland_config.conf"
+config = "path_to_hyprland_config.conf"
 subthemes = ["path_to_subtheme.toml", "oh_another_one.toml"]
 default_subtheme = "the theme name present in path_to_subtheme"
 hyprpaper = "path_to_hyprpaper_conf.conf"
@@ -28,6 +28,10 @@ a variable named `$THEME_DIR` will be passed to config files that can be used to
 
 + list [-d,--deep]
  > `--deep` also lists subthemes
+
++ repo
+  + list
+  + install \<theme-name\>
 
 ## examples
 

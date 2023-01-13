@@ -30,7 +30,7 @@ a variable named `$THEME_DIR` will be passed to config files that can be used to
   + util
     + kill \[-b|--bars\] \[-w|--wallpaper\]
   + init \[path\]
-  + help   Print this message or the help of the given subcommand(s)
+  + help
 
 ## wiki
 https://github.com/hyprland-community/theme-repo/wiki

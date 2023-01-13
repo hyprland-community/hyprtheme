@@ -67,8 +67,20 @@ fn main() {
                     if kill.bars {
                         println!("killing bars");
                         util::Util::kill_all_bars();
+                    } else if kill.wallpaper {
+                        println!("killing wallpaper");
+                        util::Util::kill_all_wallpapers();
+                    } else {
+                        println!("killing all");
+                        util::Util::kill_all();
                     }
                 }
+            }
+        },
+        Hyprtheme::Init(init) => {
+            match util::Util::create_template(init.path.to_owned()) {
+                Ok(path) => println!("created template at {}", path.display()),
+                Err(e) => println!("error: {}", e),
             }
         }
             

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::{theme::Theme, util};
 use clap::Parser;
 
@@ -7,7 +9,8 @@ pub enum Hyprtheme {
     Apply(Apply),
     List(List),
     Repo(Repo),
-    Util(Util)
+    Util(Util),
+    Init(Init),
 }
 
 #[derive(Parser)]
@@ -83,5 +86,11 @@ pub struct Kill{
 pub struct Util{
     #[command(subcommand)]
     pub subcommand: UtilSubCommand
+}
+
+#[derive(Parser)]
+pub struct Init{
+    #[arg()]
+    pub path: Option<PathBuf>,
 }
 

@@ -22,16 +22,21 @@ hyprpaper = "path_to_hyprpaper_conf.conf"
 
 a variable named `$THEME_DIR` will be passed to config files that can be used to link to other files inside theme folder
 
-## Commands
-+ apply \<theme-name\>
- > theme-name can also contain `:` which represent subthemes, ie `print:dark` will represent `print` theme with subtheme `dark`
+## Commands:
+  apply \<theme\>
+  list   
+  repo
+    + list
+    + install  \<theme\>
+  util
+    + kill \[-b|--bars\] \[-w|--wallpaper\]
+  init \[path\]
+  help   Print this message or the help of the given subcommand(s)
 
-+ list [-d,--deep]
- > `--deep` also lists subthemes
+Options:
+  -h, --help     Print help information
+  -V, --version  Print version information
 
-+ repo
-  + list
-  + install \<theme-name\>
 
 ## examples
 

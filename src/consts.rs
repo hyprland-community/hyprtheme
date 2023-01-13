@@ -6,6 +6,7 @@ author="who?"
 version="1.0.0"
 git="https://github.com/your/repo"
 config="theme.conf"
+depends=["waybar"]
 "#;
 
 pub const T_CONF: &str = r#"

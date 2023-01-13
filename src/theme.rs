@@ -11,6 +11,7 @@ pub struct Theme {
     pub version: String,
     pub subthemes: Vec<Theme>,
     pub default_subtheme: String,
+    pub depends: Vec<String>,
     pub _repo: Option<String>,
     pub _path: PathBuf,
 }
@@ -89,6 +90,17 @@ impl Theme {
             None => String::new(),
         };
 
+        let depends = match theme_info.get("depends") {
+            Some(depends) => {
+                let mut deps: Vec<String> = Vec::new();
+                for dep in depends.as_array().expect("depends is not an array") {
+                    deps.push(dep.as_str().expect("dep is not a string").to_string());
+                }
+                deps
+            },
+            None => Vec::new(),
+        };
+
         Theme {
             name,
             desc,
@@ -99,6 +111,7 @@ impl Theme {
             subthemes,
             _repo: None,
             _path: path,
+            depends,
             default_subtheme,
         }
     }

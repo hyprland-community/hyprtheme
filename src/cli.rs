@@ -7,6 +7,7 @@ pub enum Hyprtheme {
     Apply(Apply),
     List(List),
     Repo(Repo),
+    Util(Util)
 }
 
 #[derive(Parser)]
@@ -64,4 +65,23 @@ pub struct Repo {
     pub theme: Option<String>
 }
 
+#[derive(clap::Subcommand)]
+pub enum UtilSubCommand {
+    Kill(Kill),
+}
+
+#[derive(Parser)]
+pub struct Kill{
+    #[arg(short,long)]
+    pub bars: bool,
+
+    #[arg(short,long)]
+    pub wallpaper: bool,
+}
+
+#[derive(Parser)]
+pub struct Util{
+    #[command(subcommand)]
+    pub subcommand: UtilSubCommand
+}
 

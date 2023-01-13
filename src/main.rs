@@ -5,6 +5,7 @@ mod config;
 mod hypr;
 mod theme;
 mod util;
+mod consts;
 
 use cli::Hyprtheme;
 
@@ -59,6 +60,16 @@ fn main() {
                     };
                 }
             };
+        },
+        Hyprtheme::Util(util) => {
+            match util.subcommand {
+                cli::UtilSubCommand::Kill(kill) => {
+                    if kill.bars {
+                        println!("killing bars");
+                        util::Util::kill_all_bars();
+                    }
+                }
+            }
         }
             
     }

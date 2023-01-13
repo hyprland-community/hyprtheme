@@ -16,7 +16,6 @@ git = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 config = "path_to_hyprland_config.conf"
 subthemes = ["path_to_subtheme.toml", "oh_another_one.toml"]
 default_subtheme = "the theme name present in path_to_subtheme"
-hyprpaper = "path_to_hyprpaper_conf.conf"
 ```
 > note all paths will be relative to your toml file path
 

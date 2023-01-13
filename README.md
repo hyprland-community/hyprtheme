@@ -36,6 +36,8 @@ Options:
   -h, --help     Print help information
   -V, --version  Print version information
 
+## wiki
+https://github.com/hyprland-community/theme-repo/wiki
 
 ## examples
 

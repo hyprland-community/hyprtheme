@@ -9,9 +9,8 @@ pub struct Config {
 
 impl Config {
     pub fn from_theme(mut theme: Theme) -> Config {
-        match get_subtheme(&theme) {
-            Some(subtheme) => theme = subtheme,
-            None => {}
+        if let Some(subtheme) = get_subtheme(&theme) {
+            theme = subtheme
         }
 
         Config {

@@ -1,10 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use toml;
-
-use crate::config::Config;
-
 #[derive(Debug, Clone)]
 pub struct Theme {
     pub config_path: PathBuf,
@@ -20,7 +16,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn parse_config(raw: String,path: PathBuf) -> Theme {
+    pub fn parse_config(raw: String, path: PathBuf) -> Theme {
         let config = raw.parse::<toml::Value>().expect("Unable to parse toml");
 
         let mut subthemes: Vec<Theme> = Vec::new();
@@ -30,27 +26,24 @@ impl Theme {
             None => panic!("Theme file {} is missing theme info", &path.display()),
         };
 
-        match theme_info.get("subthemes") {
-            Some(__subthemes) => {
-                for subtheme in __subthemes.as_array().expect("subthemes is not an array") {
-                    let subtheme_path = {
-                        path.parent().expect("theme has no parent directory").join(
-                            subtheme
-                                .as_str()
-                                .expect("subtheme is not a string")
-                                .replace("./", ""),
-                        )
-                    };
-                    subthemes.push(Theme::from_file(subtheme_path));
-                }
+        if let Some(__subthemes) = theme_info.get("subthemes") {
+            for subtheme in __subthemes.as_array().expect("subthemes is not an array") {
+                let subtheme_path = {
+                    path.parent().expect("theme has no parent directory").join(
+                        subtheme
+                            .as_str()
+                            .expect("subtheme is not a string")
+                            .replace("./", ""),
+                    )
+                };
+                subthemes.push(Theme::from_file(subtheme_path));
             }
-            None => {}
         };
 
         let config_path = match theme_info.get("config") {
             Some(conf) => {
                 let conf = conf.as_str().expect("subtheme is not a string");
-                if conf == "" && subthemes.len() < 1 {
+                if conf.is_empty() && subthemes.is_empty() {
                     panic!("Theme file {} is missing conf path", path.display())
                 }
                 path.parent()
@@ -58,7 +51,7 @@ impl Theme {
                     .join(conf.replace("./", ""))
             }
             None => {
-                if subthemes.len() < 1 {
+                if subthemes.is_empty() {
                     panic!("Theme file {} is missing conf path", path.display())
                 } else {
                     Path::new("").to_path_buf()
@@ -112,10 +105,10 @@ impl Theme {
 
     pub fn from_file(path: PathBuf) -> Theme {
         let raw = fs::read_to_string(&path).expect("Unable to read file");
-        Theme::parse_config(raw,path)
+        Theme::parse_config(raw, path)
     }
 
-    pub fn from_string(raw: String,path: PathBuf) -> Theme {
-        Theme::parse_config(raw,path)
+    pub fn from_string(raw: String, path: PathBuf) -> Theme {
+        Theme::parse_config(raw, path)
     }
 }

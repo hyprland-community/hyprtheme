@@ -1,8 +1,10 @@
-use crate::{theme::Theme,consts};
-use expanduser;
-use std::{fs,path::{self, PathBuf, Path}, io::BufReader,process};
-use gitmodules;
-use reqwest;
+use crate::{consts, theme::Theme};
+use std::{
+    fs,
+    io::BufReader,
+    path::{self, Path, PathBuf},
+    process,
+};
 
 pub struct ThemeMap {
     pub name: String,
@@ -18,19 +20,19 @@ impl ThemeMap {
         }
         ThemeMap {
             name: theme.name,
-            subthemes: subthemes,
+            subthemes,
         }
     }
 
     pub fn display(&self) -> String {
         let mut out = self.name.to_owned();
-        if self.subthemes.len() > 0 {
-            out.push_str(":");
+        if self.subthemes.is_empty() {
+            out.push(':');
 
             for subtheme in self.subthemes.iter() {
                 let subtheme_display = subtheme.display();
                 let l = subtheme_display
-                    .split("\n")
+                    .split('\n')
                     .into_iter()
                     .collect::<Vec<&str>>();
                 for line in l.iter() {
@@ -46,7 +48,7 @@ pub fn get_subtheme(theme: &Theme) -> Option<Theme> {
     let subtheme_str = &theme.default_subtheme;
 
     if !subtheme_str.trim().is_empty() {
-        let nest = subtheme_str.split(":").into_iter().collect::<Vec<&str>>();
+        let nest = subtheme_str.split(':').into_iter().collect::<Vec<&str>>();
 
         let mut subtheme = theme.subthemes.iter().find(|t| t.name == nest[0]).unwrap();
 
@@ -87,10 +89,8 @@ pub fn list_themes() -> Vec<String> {
     for entry in theme_dir.read_dir().unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
-        if path.is_dir() {
-            if path.join("theme.toml").exists() {
-                themes.push(path.file_name().unwrap().to_str().unwrap().to_string());
-            }
+        if path.is_dir() && path.join("theme.toml").exists() {
+            themes.push(path.file_name().unwrap().to_str().unwrap().to_string());
         }
     }
     themes
@@ -116,16 +116,27 @@ pub fn list_themes_deep() -> Vec<ThemeMap> {
 pub struct Repo {}
 
 impl Repo {
-    pub fn list_themes() -> Vec<Theme>{
-        let modules_url = "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
+    pub fn list_themes() -> Vec<Theme> {
+        let modules_url =
+            "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
         let raw = reqwest::blocking::get(modules_url).unwrap().text().unwrap();
         let bytereader = BufReader::new(raw.as_bytes());
         let modules = gitmodules::read_gitmodules(bytereader).unwrap();
         let mut themes = Vec::new();
         for module in modules.iter() {
-            let theme_url = module.entries().iter().find(|e| e.0 == "url").unwrap().to_owned().1; 
-            let theme_info = reqwest::blocking::get(theme_url.to_owned() + "/blob/master/theme.toml?raw=true").unwrap().text().unwrap();
-            let mut theme = Theme::from_string(theme_info,Path::new("/tmp").to_path_buf());
+            let theme_url = module
+                .entries()
+                .iter()
+                .find(|e| e.0 == "url")
+                .unwrap()
+                .to_owned()
+                .1;
+            let theme_info =
+                reqwest::blocking::get(theme_url.to_owned() + "/blob/master/theme.toml?raw=true")
+                    .unwrap()
+                    .text()
+                    .unwrap();
+            let mut theme = Theme::from_string(theme_info, Path::new("/tmp").to_path_buf());
             if theme._repo.is_none() {
                 theme._repo = Some(theme_url);
             }
@@ -142,7 +153,7 @@ impl Repo {
         themes
     }
 
-    pub fn install_theme(theme_name:&str) -> Result<PathBuf,String> {
+    pub fn install_theme(theme_name: &str) -> Result<PathBuf, String> {
         let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
 
         let themes = Repo::list_themes();
@@ -164,9 +175,7 @@ impl Repo {
                     .expect("failed to set executable");
                 Ok(theme_dir.join(&t.name))
             }
-            None => {
-                Err(format!("Theme {} not found", theme_name))
-            }
+            None => Err(format!("Theme {} not found", theme_name)),
         }
     }
 }
@@ -174,67 +183,56 @@ impl Repo {
 pub struct Util {}
 
 impl Util {
-
-    pub fn kill_all(){
+    pub fn kill_all() {
         Util::kill_all_bars();
         Util::kill_all_wallpapers();
     }
 
-    pub fn kill_all_bars(){
-        let pkill = vec!["swaybar","waybar","ironbar"];
+    pub fn kill_all_bars() {
+        let pkill = vec!["swaybar", "waybar", "ironbar"];
 
         for p in pkill.iter() {
-            match process::Command::new("pkill")
-                .arg(p)
-                .spawn(){
-                    Ok(_) => println!("killed {}", p),
-                    Err(_) => println!("{} not running", p)
-                }
-        }
-
-        match process::Command::new("eww")
-            .arg("kill")
-            .spawn() {
-                Ok(_) => println!("killed eww"),
-                Err(_) => println!("eww not running")
+            match process::Command::new("pkill").arg(p).spawn() {
+                Ok(_) => println!("killed {}", p),
+                Err(_) => println!("{} not running", p),
             }
-    }
+        }
 
-    pub fn kill_all_wallpapers(){
-        let pkill = vec!["swaybg","wbg","hyprpaper","mpvpaper","swww"];
-
-        for p in pkill.iter() {
-            match process::Command::new("pkill")
-                .arg(p)
-                .spawn(){
-                    Ok(_) => println!("killed {}", p),
-                    Err(_) => println!("{} not running", p)
-                }
+        match process::Command::new("eww").arg("kill").spawn() {
+            Ok(_) => println!("killed eww"),
+            Err(_) => println!("eww not running"),
         }
     }
 
-    pub fn create_template(_template_dir:Option<PathBuf>) -> Result<PathBuf,String> {
-        let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
-        
-        let template_dir: PathBuf;
-        match _template_dir {
-            Some(_) => {
-                template_dir = _template_dir.unwrap();
-            },
+    pub fn kill_all_wallpapers() {
+        let pkill = vec!["swaybg", "wbg", "hyprpaper", "mpvpaper", "swww"];
+
+        for p in pkill.iter() {
+            match process::Command::new("pkill").arg(p).spawn() {
+                Ok(_) => println!("killed {}", p),
+                Err(_) => println!("{} not running", p),
+            }
+        }
+    }
+
+    pub fn create_template(_template_dir: Option<PathBuf>) -> Result<PathBuf, String> {
+        let template_dir = match _template_dir {
+            Some(_) => _template_dir.unwrap(),
             None => {
-                template_dir = theme_dir.join("template");
+                let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
+                theme_dir.join("template")
             }
-        }
-        
+        };
+
         if template_dir.exists() && template_dir.is_dir() {
-            return Err("Template already exists".to_string())
+            return Err("Template already exists".to_string());
         }
 
         fs::create_dir_all(&template_dir).unwrap();
-        
-        fs::write(template_dir.join("theme.toml"), consts::template_theme_toml ).unwrap();
-        fs::write(template_dir.join("theme.conf"), consts::template_theme_conf ).unwrap();
-        fs::write(template_dir.join("load"), consts::template_load ).unwrap();
+
+        fs::write(template_dir.join("theme.toml"), consts::T_TOML).unwrap();
+        fs::write(template_dir.join("theme.conf"), consts::T_CONF).unwrap();
+        fs::write(template_dir.join("load"), consts::T_LOAD).unwrap();
 
         process::Command::new("chmod")
             .arg("+x")
@@ -243,6 +241,5 @@ impl Util {
             .expect("failed to set executable");
 
         Ok(template_dir)
-
     }
 }

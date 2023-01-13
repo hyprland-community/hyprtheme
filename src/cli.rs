@@ -26,7 +26,7 @@ pub struct List {
 }
 
 fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    let nest = theme_name.split(":").into_iter().collect::<Vec<&str>>();
+    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
 
     match util::find_theme(nest[0]) {
         Ok(theme_path) => {
@@ -36,7 +36,7 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
             }
             Ok(t)
         }
-        Err(e) => return Err(e),
+        Err(e) => Err(e),
     }
 }
 
@@ -65,7 +65,7 @@ pub struct Repo {
     pub subcommand: Option<RepoSubcommand>,
 
     #[arg()]
-    pub theme: Option<String>
+    pub theme: Option<String>,
 }
 
 #[derive(clap::Subcommand)]
@@ -74,23 +74,22 @@ pub enum UtilSubCommand {
 }
 
 #[derive(Parser)]
-pub struct Kill{
-    #[arg(short,long)]
+pub struct Kill {
+    #[arg(short, long)]
     pub bars: bool,
 
-    #[arg(short,long)]
+    #[arg(short, long)]
     pub wallpaper: bool,
 }
 
 #[derive(Parser)]
-pub struct Util{
+pub struct Util {
     #[command(subcommand)]
-    pub subcommand: UtilSubCommand
+    pub subcommand: UtilSubCommand,
 }
 
 #[derive(Parser)]
-pub struct Init{
+pub struct Init {
     #[arg()]
     pub path: Option<PathBuf>,
 }
-

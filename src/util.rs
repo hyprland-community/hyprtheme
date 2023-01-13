@@ -1,6 +1,6 @@
 use crate::theme::Theme;
 use expanduser;
-use std::{path::{self, PathBuf, Path}, io::BufReader,process};
+use std::{fs,path::{self, PathBuf, Path}, io::BufReader,process};
 use gitmodules;
 use reqwest;
 
@@ -163,5 +163,48 @@ impl Repo {
                 Err(format!("Theme {} not found", theme_name))
             }
         }
+    }
+}
+
+pub struct Util {}
+
+impl Util {
+    pub fn kill_all_bars(){
+        match process::Command::new("eww")
+            .arg("kill")
+            .spawn() {
+                Ok(_) => println!("killed eww"),
+                Err(_) => println!("eww not running")
+            }
+
+        match process::Command::new("pkill")
+            .arg("waybar")
+            .spawn(){
+                Ok(_) => println!("killed waybar"),
+                Err(_) => println!("waybar not running")
+            }
+
+        match process::Command::new("pkill")
+            .arg("ironbar")
+            .spawn(){
+                Ok(_) => println!("killed ironbar"),
+                Err(_) => println!("ironbar not running")
+            }
+    }
+
+    pub fn create_template() -> Result<PathBuf,String> {
+        let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
+        let template_dir = theme_dir.join("template");
+
+        if template_dir.exists() && template_dir.is_dir() {
+            return Err("Template already exists".to_string())
+        }
+
+        fs::create_dir_all(&template_dir).unwrap();
+
+        let theme_toml = 
+
+        Ok(template_dir)
+
     }
 }

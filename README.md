@@ -24,19 +24,15 @@ default_subtheme = "the theme name present in path_to_subtheme"
 a variable named `$THEME_DIR` will be passed to config files that can be used to link to other files inside theme folder
 
 ## Commands:
-  apply \<theme\>
-  list   
-  repo
+  + apply \<theme\>
+  + list   
+  + repo
     + list
     + install  \<theme\>
-  util
+  + util
     + kill \[-b|--bars\] \[-w|--wallpaper\]
-  init \[path\]
-  help   Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help     Print help information
-  -V, --version  Print version information
+  + init \[path\]
+  + help
 
 ## Wiki
 https://github.com/hyprland-community/theme-repo/wiki

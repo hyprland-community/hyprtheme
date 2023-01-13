@@ -1,4 +1,4 @@
-use crate::theme::Theme;
+use crate::{theme::Theme,consts};
 use expanduser;
 use std::{fs,path::{self, PathBuf, Path}, io::BufReader,process};
 use gitmodules;
@@ -156,7 +156,12 @@ impl Repo {
                     .arg(t._repo.as_ref().unwrap())
                     .arg(&theme_dir.join(&t.name))
                     .output()
-                    .expect("failed to execute process");
+                    .expect("failed to clone theme");
+                process::Command::new("chmod")
+                    .arg("+x")
+                    .arg(&theme_dir.join(&t.name).join("load"))
+                    .output()
+                    .expect("failed to set executable");
                 Ok(theme_dir.join(&t.name))
             }
             None => {
@@ -169,40 +174,73 @@ impl Repo {
 pub struct Util {}
 
 impl Util {
+
+    pub fn kill_all(){
+        Util::kill_all_bars();
+        Util::kill_all_wallpapers();
+    }
+
     pub fn kill_all_bars(){
+        let pkill = vec!["swaybar","waybar","ironbar"];
+
+        for p in pkill.iter() {
+            match process::Command::new("pkill")
+                .arg(p)
+                .spawn(){
+                    Ok(_) => println!("killed {}", p),
+                    Err(_) => println!("{} not running", p)
+                }
+        }
+
         match process::Command::new("eww")
             .arg("kill")
             .spawn() {
                 Ok(_) => println!("killed eww"),
                 Err(_) => println!("eww not running")
             }
-
-        match process::Command::new("pkill")
-            .arg("waybar")
-            .spawn(){
-                Ok(_) => println!("killed waybar"),
-                Err(_) => println!("waybar not running")
-            }
-
-        match process::Command::new("pkill")
-            .arg("ironbar")
-            .spawn(){
-                Ok(_) => println!("killed ironbar"),
-                Err(_) => println!("ironbar not running")
-            }
     }
 
-    pub fn create_template() -> Result<PathBuf,String> {
-        let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
-        let template_dir = theme_dir.join("template");
+    pub fn kill_all_wallpapers(){
+        let pkill = vec!["swaybg","wbg","hyprpaper","mpvpaper","swww"];
 
+        for p in pkill.iter() {
+            match process::Command::new("pkill")
+                .arg(p)
+                .spawn(){
+                    Ok(_) => println!("killed {}", p),
+                    Err(_) => println!("{} not running", p)
+                }
+        }
+    }
+
+    pub fn create_template(_template_dir:Option<PathBuf>) -> Result<PathBuf,String> {
+        let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
+        
+        let template_dir: PathBuf;
+        match _template_dir {
+            Some(_) => {
+                template_dir = _template_dir.unwrap();
+            },
+            None => {
+                template_dir = theme_dir.join("template");
+            }
+        }
+        
         if template_dir.exists() && template_dir.is_dir() {
             return Err("Template already exists".to_string())
         }
 
         fs::create_dir_all(&template_dir).unwrap();
+        
+        fs::write(template_dir.join("theme.toml"), consts::template_theme_toml ).unwrap();
+        fs::write(template_dir.join("theme.conf"), consts::template_theme_conf ).unwrap();
+        fs::write(template_dir.join("load"), consts::template_load ).unwrap();
 
-        let theme_toml = 
+        process::Command::new("chmod")
+            .arg("+x")
+            .arg(&template_dir.join("load"))
+            .output()
+            .expect("failed to set executable");
 
         Ok(template_dir)
 

@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{config::Config, consts};
+use crate::{helper::consts, parser::config::Config};
 
 pub fn ensure_config() {
     let hypr_config = expanduser::expanduser("~/.config/hypr/hyprland.conf").unwrap();

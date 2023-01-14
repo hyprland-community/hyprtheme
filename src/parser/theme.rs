@@ -97,7 +97,7 @@ impl Theme {
                     deps.push(dep.as_str().expect("dep is not a string").to_string());
                 }
                 deps
-            },
+            }
             None => Vec::new(),
         };
 

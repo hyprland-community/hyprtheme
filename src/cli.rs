@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{theme::Theme, util};
+use crate::{parser::theme::Theme, util};
 use clap::Parser;
 
 #[derive(Parser)]

@@ -1,4 +1,4 @@
-use crate::{theme::Theme, util::get_subtheme};
+use crate::{parser::theme::Theme, util::get_subtheme};
 use std::fs;
 
 #[derive(Debug, Clone)]

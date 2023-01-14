@@ -1,4 +1,4 @@
-use crate::{consts, theme::Theme};
+use crate::{helper::consts, parser::theme::Theme};
 use std::{
     fs,
     io::BufReader,

@@ -1,19 +1,18 @@
 use clap::Parser;
 
 mod cli;
-mod config;
-mod consts;
-mod hypr;
-mod theme;
-mod util;
+mod helper;
+mod parser;
 
 use cli::Hyprtheme;
+use helper::{hypr, util};
+use parser::config::Config;
 
 fn main() {
     let hyprtheme = Hyprtheme::parse();
     match hyprtheme {
         Hyprtheme::Apply(apply) => {
-            let config = config::Config::from_theme(apply.theme);
+            let config = Config::from_theme(apply.theme);
             println!("applying...");
             hypr::apply(config);
         }

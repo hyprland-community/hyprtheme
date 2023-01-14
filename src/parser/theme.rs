@@ -22,7 +22,10 @@ impl Kill {
                     match exclude_bar.as_array() {
                         Some(exclude_bar) => {
                             for bar in exclude_bar {
-                                kill.exclude_bar.push(bar.to_string())
+                                kill.exclude_bar.push(match bar.as_str(){
+                                    Some(bar) => bar.to_string(),
+                                    None => return Err("[Kill] exclude_bar is not a string".to_string()),
+                                })
                             }
                         }
                         None => return Err("[Kill] exclude_bar is not an array".to_string()),
@@ -32,7 +35,10 @@ impl Kill {
                     match exclude_wallpaper.as_array() {
                         Some(exclude_wallpaper) => {
                             for wallpaper in exclude_wallpaper {
-                                kill.exclude_wallpaper.push(wallpaper.to_string())
+                                kill.exclude_wallpaper.push(match wallpaper.as_str(){
+                                    Some(wallpaper) => wallpaper.to_string(),
+                                    None => return Err("[Kill] exclude_wallpaper is not a string".to_string()),
+                                })
                             }
                         }
                         None => return Err("[Kill] exclude_wallpaper is not an array".to_string()),

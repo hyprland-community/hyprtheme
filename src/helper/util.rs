@@ -214,14 +214,14 @@ impl Util {
     }
 
     pub fn kill_all_bars(exclude: Option<Vec<String>>) {
-        let mut pkill = vec!["swaybar", "waybar", "ironbar", "eww"];
+        let pkill = vec!["swaybar", "waybar", "ironbar", "eww"];
         let exclude = exclude.unwrap_or_default();
 
-        for e in exclude.iter() {
-            pkill.retain(|&p| p != *e);
-        }
-
         for p in pkill.iter() {
+            if exclude.contains(&p.to_string()) {
+                println!("skipping {}", p);
+                continue;
+            }
             match process::Command::new("pkill").arg(p).spawn() {
                 Ok(_) => println!("killed {}", p),
                 Err(_) => println!("{} not running", p),
@@ -230,15 +230,15 @@ impl Util {
     }
 
     pub fn kill_all_wallpapers(exclude: Option<Vec<String>>) {
-        let mut pkill = vec!["swaybg", "wbg", "hyprpaper", "mpvpaper", "swww"];
+        let pkill = vec!["swaybg", "wbg", "hyprpaper", "mpvpaper", "swww"];
 
         let exclude = exclude.unwrap_or_default();
 
-        for e in exclude.iter() {
-            pkill.retain(|&p| p != *e);
-        }
-
         for p in pkill.iter() {
+            if exclude.contains(&p.to_string()) {
+                println!("skipping {}", p);
+                continue;
+            }
             match process::Command::new("pkill").arg(p).spawn() {
                 Ok(_) => println!("killed {}", p),
                 Err(_) => println!("{} not running", p),

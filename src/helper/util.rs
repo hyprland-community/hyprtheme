@@ -1,4 +1,4 @@
-use crate::{helper::consts, parser::theme::Theme};
+use crate::{helper::consts, parser::theme::Theme,render};
 use std::{
     fs,
     io::BufReader,
@@ -9,6 +9,7 @@ use std::{
 pub struct ThemeMap {
     pub name: String,
     pub subthemes: Vec<ThemeMap>,
+    pub git: Option<String>,
 }
 
 impl ThemeMap {
@@ -21,26 +22,8 @@ impl ThemeMap {
         ThemeMap {
             name: theme.name,
             subthemes,
+            git: Some(theme.git),
         }
-    }
-
-    pub fn display(&self) -> String {
-        let mut out = self.name.to_owned();
-        if self.subthemes.is_empty() {
-            out.push(':');
-
-            for subtheme in self.subthemes.iter() {
-                let subtheme_display = subtheme.display();
-                let l = subtheme_display
-                    .split('\n')
-                    .into_iter()
-                    .collect::<Vec<&str>>();
-                for line in l.iter() {
-                    out.push_str(&format!("\n  {}", line))
-                }
-            }
-        }
-        out
     }
 }
 
@@ -96,7 +79,7 @@ pub fn list_themes() -> Vec<String> {
     themes
 }
 
-pub fn list_themes_deep() -> Vec<ThemeMap> {
+pub fn list_themes_deep() -> Result<Vec<ThemeMap>,String> {
     let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
     let mut themes: Vec<ThemeMap> = Vec::new();
 
@@ -106,17 +89,22 @@ pub fn list_themes_deep() -> Vec<ThemeMap> {
         if path.is_dir() {
             let theme_path = path.join("theme.toml");
             if theme_path.exists() {
-                themes.push(ThemeMap::from_theme(Theme::from_file(theme_path)));
+                themes.push(ThemeMap::from_theme(
+                    match Theme::from_file(theme_path){
+                        Ok(t) => t,
+                        Err(e) => return Err(e)
+                    }
+                ));
             }
         }
     }
-    themes
+    Ok(themes)
 }
 
 pub struct Repo {}
 
 impl Repo {
-    pub fn list_themes() -> Vec<Theme> {
+    pub fn list_themes() -> Result<Vec<Theme>,String> {
         let modules_url =
             "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
         let raw = reqwest::blocking::get(modules_url).unwrap().text().unwrap();
@@ -136,43 +124,58 @@ impl Repo {
                     .unwrap()
                     .text()
                     .unwrap();
-            let mut theme = Theme::from_string(theme_info, Path::new("/tmp").to_path_buf());
-            if theme._repo.is_none() {
-                theme._repo = Some(theme_url);
-            }
-            themes.push(theme);
+            match Theme::from_string(theme_info, Path::new("/tmp").to_path_buf()) {
+                Ok(mut theme) => {
+                    if theme._repo.is_none() {
+                        theme._repo = Some(theme_url);
+                    }
+                    themes.push(theme);
+                },
+                Err(e) => render::warn(format!("skipping {}: {}", theme_url,e).as_str()),
+            };
+            
         }
-        themes
+        Ok(themes)
     }
 
-    pub fn list_themes_deep() -> Vec<ThemeMap> {
+    pub fn list_themes_deep() -> Result<Vec<ThemeMap>,String> {
         let mut themes: Vec<ThemeMap> = Vec::new();
-        for theme in Repo::list_themes().iter() {
+        for theme in match Repo::list_themes(){
+            Ok(themes) => themes,
+            Err(e) => return Err(e)
+        } {
             themes.push(ThemeMap::from_theme(theme.clone()));
         }
-        themes
+        Ok(themes)
     }
 
     pub fn install_theme(theme_name: &str) -> Result<PathBuf, String> {
         let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
 
-        let themes = Repo::list_themes();
+        let themes = match Repo::list_themes(){
+            Ok(themes) => themes,
+            Err(e) => return Err(e)
+        };
 
         let theme = themes.iter().find(|t| t.name == theme_name);
 
         match theme {
             Some(t) => {
-                process::Command::new("git")
+                match process::Command::new("git")
                     .arg("clone")
                     .arg(t._repo.as_ref().unwrap())
                     .arg(&theme_dir.join(&t.name))
-                    .output()
-                    .expect("failed to clone theme");
-                process::Command::new("chmod")
+                    .output() {
+                        Ok(_) => {}
+                        Err(_) => return Err(format!("Failed to clone theme {}", theme_name)),
+                    };
+                match process::Command::new("chmod")
                     .arg("+x")
                     .arg(&theme_dir.join(&t.name).join("load"))
-                    .output()
-                    .expect("failed to set executable");
+                    .output() {
+                        Ok(_) => {}
+                        Err(_) => return Err(format!("Failed to chmod +x `load` script for theme {}", theme_name)),
+                    };
                 Ok(theme_dir.join(&t.name))
             }
             None => Err(format!("Theme {} not found", theme_name)),
@@ -234,11 +237,13 @@ impl Util {
         fs::write(template_dir.join("theme.conf"), consts::T_CONF).unwrap();
         fs::write(template_dir.join("load"), consts::T_LOAD).unwrap();
 
-        process::Command::new("chmod")
+        match process::Command::new("chmod")
             .arg("+x")
             .arg(&template_dir.join("load"))
-            .output()
-            .expect("failed to set executable");
+            .output(){
+                Ok(_) => {},
+                Err(_) => return Err("Failed to set load script as executable".to_string()),
+            };
 
         Ok(template_dir)
     }

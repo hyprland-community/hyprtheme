@@ -17,27 +17,39 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn parse_config(raw: String, path: PathBuf) -> Theme {
-        let config = raw.parse::<toml::Value>().expect("Unable to parse toml");
+    pub fn parse_config(raw: String, path: PathBuf) -> Result<Theme,String> {
+        let config = match raw.parse::<toml::Value>(){
+            Ok(config) => config,
+            Err(e) => return Err(format!("Error parsing theme config: {}", e)),
+        };
 
         let mut subthemes: Vec<Theme> = Vec::new();
 
         let theme_info = match config.get("theme") {
             Some(theme_info) => theme_info,
-            None => panic!("Theme file {} is missing theme info", &path.display()),
+            None => return Err(format!("Theme file {} is missing theme info", &path.display())),
         };
 
         if let Some(__subthemes) = theme_info.get("subthemes") {
-            for subtheme in __subthemes.as_array().expect("subthemes is not an array") {
+            for subtheme in match __subthemes.as_array() {
+                Some(subthemes) => subthemes,
+                None => return Err(format!("Theme file {} has invalid subthemes(not an array)", &path.display())),
+            } {
                 let subtheme_path = {
-                    path.parent().expect("theme has no parent directory").join(
-                        subtheme
-                            .as_str()
-                            .expect("subtheme is not a string")
-                            .replace("./", ""),
-                    )
+                    match path.parent(){
+                        Some(parent) => parent.join(
+                            match subtheme.as_str(){
+                                    Some(subtheme) => subtheme.replace("./", ""),
+                                    None => return Err(format!("Theme file {} has invalid subtheme(not a string)", &path.display())),
+                                },
+                        ),
+                        None => return Err(format!("Theme file {} has invalid subtheme(not a string)", &path.display())),
+                    }
                 };
-                subthemes.push(Theme::from_file(subtheme_path));
+                match Theme::from_file(subtheme_path) {
+                    Ok(subtheme) => subthemes.push(subtheme),
+                    Err(e) => return Err(e),
+                }
             }
         };
 
@@ -45,7 +57,7 @@ impl Theme {
             Some(conf) => {
                 let conf = conf.as_str().expect("subtheme is not a string");
                 if conf.is_empty() && subthemes.is_empty() {
-                    panic!("Theme file {} is missing conf path", path.display())
+                    return Err(format!("Theme file {} is missing conf path", path.display()))
                 }
                 path.parent()
                     .expect("theme has no parent directory")
@@ -53,7 +65,7 @@ impl Theme {
             }
             None => {
                 if subthemes.is_empty() {
-                    panic!("Theme file {} is missing conf path", path.display())
+                    return Err(format!("Theme file {} is missing conf path", path.display()))
                 } else {
                     Path::new("").to_path_buf()
                 }
@@ -93,15 +105,21 @@ impl Theme {
         let depends = match theme_info.get("depends") {
             Some(depends) => {
                 let mut deps: Vec<String> = Vec::new();
-                for dep in depends.as_array().expect("depends is not an array") {
-                    deps.push(dep.as_str().expect("dep is not a string").to_string());
+                for dep in match depends.as_array() {
+                    Some(depends) => depends,
+                    None => return Err(format!("Theme file {} has invalid depends(not an array)", &path.display())),
+                } {
+                    deps.push(match dep.as_str() {
+                        Some(dep) => dep.to_string(),
+                        None => return Err(format!("Theme file {} has invalid depend(not a string)", &path.display())),
+                    });
                 }
                 deps
             }
             None => Vec::new(),
         };
 
-        Theme {
+        Ok(Theme {
             name,
             desc,
             config_path,
@@ -113,15 +131,18 @@ impl Theme {
             _path: path,
             depends,
             default_subtheme,
-        }
+        })
     }
 
-    pub fn from_file(path: PathBuf) -> Theme {
-        let raw = fs::read_to_string(&path).expect("Unable to read file");
+    pub fn from_file(path: PathBuf) -> Result<Theme,String> {
+        let raw = match fs::read_to_string(&path){
+            Ok(f) => f,
+            Err(e) => return Err(format!("error reading file: {}",e))
+        };
         Theme::parse_config(raw, path)
     }
 
-    pub fn from_string(raw: String, path: PathBuf) -> Theme {
+    pub fn from_string(raw: String, path: PathBuf) -> Result<Theme,String> {
         Theme::parse_config(raw, path)
     }
 }

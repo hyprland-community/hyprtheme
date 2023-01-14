@@ -84,7 +84,10 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
 
     match util::find_theme(nest[0]) {
         Ok(theme_path) => {
-            let mut t = Theme::from_file(theme_path);
+            let mut t = match Theme::from_file(theme_path){
+                Ok(theme) => theme,
+                Err(e) => return Err(e)
+            };
             if nest.len() > 1 {
                 t.default_subtheme = nest[1..].join(":");
             }

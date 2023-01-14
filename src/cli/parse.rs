@@ -103,6 +103,6 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
     }
 }
 
-fn parse_list(list: &str) -> Result<Vec<String>,String> {
+fn parse_list(list: &str) -> Result<Vec<String>, String> {
     Ok(list.split(',').into_iter().map(|s| s.to_string()).collect())
 }

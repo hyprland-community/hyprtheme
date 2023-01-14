@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::{helper::consts, parser::config::Config,util::Util};
+use crate::{helper::consts, parser::config::Config, util::Util};
 
 pub fn ensure_config() -> Result<bool, String> {
     let hypr_config = expanduser::expanduser("~/.config/hypr/hyprland.conf").unwrap();
@@ -34,7 +34,6 @@ pub fn hyprconf(config: Config) -> Result<bool, String> {
 
     Util::kill_all_bars(Some(config.theme._kill.exclude_bar.to_owned()));
     Util::kill_all_wallpapers(Some(config.theme._kill.exclude_wallpaper.to_owned()));
-
 
     match fs::write(dist_path, config.build_conf()) {
         Ok(_) => {}

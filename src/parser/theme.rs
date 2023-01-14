@@ -4,51 +4,44 @@ use std::path::{Path, PathBuf};
 use toml::Value;
 
 #[derive(Debug, Clone)]
-pub struct Kill{
-    pub exclude_bar : Vec<String>,
-    pub exclude_wallpaper : Vec<String>,
+pub struct Kill {
+    pub exclude_bar: Vec<String>,
+    pub exclude_wallpaper: Vec<String>,
 }
 
 impl Kill {
-    pub fn from_toml(config:Value)->Result<Kill,String>{
-        let mut kill = Kill{
-            exclude_bar : Vec::new(),
-            exclude_wallpaper : Vec::new(),
+    pub fn from_toml(config: Value) -> Result<Kill, String> {
+        let mut kill = Kill {
+            exclude_bar: Vec::new(),
+            exclude_wallpaper: Vec::new(),
         };
 
         match config.get("kill") {
             Some(kill_conf) => {
-                match kill_conf.get("exclude_bar") {
-                    Some(exclude_bar) => {
-                         match exclude_bar.as_array() {
-                            Some(exclude_bar) => {
-                                for bar in exclude_bar {
-                                    kill.exclude_bar.push(bar.to_string())
-                                }
-                            },
-                            None => return Err(format!("[Kill] exclude_bar is not an array")),
-                         }
-                    },
-                    None => {},
+                if let Some(exclude_bar) = kill_conf.get("exclude_bar") {
+                    match exclude_bar.as_array() {
+                        Some(exclude_bar) => {
+                            for bar in exclude_bar {
+                                kill.exclude_bar.push(bar.to_string())
+                            }
+                        }
+                        None => return Err("[Kill] exclude_bar is not an array".to_string()),
+                    }
                 };
-                match kill_conf.get("exclude_wallpaper") {
-                    Some(exclude_wallpaper) => {
-                         match exclude_wallpaper.as_array() {
-                            Some(exclude_wallpaper) => {
-                                for wallpaper in exclude_wallpaper {
-                                    kill.exclude_wallpaper.push(wallpaper.to_string())
-                                }
-                            },
-                            None => return Err(format!("[Kill] exclude_wallpaper is not an array")),
-                         }
-                    },
-                    None => {},
+                if let Some(exclude_wallpaper) = kill_conf.get("exclude_wallpaper") {
+                    match exclude_wallpaper.as_array() {
+                        Some(exclude_wallpaper) => {
+                            for wallpaper in exclude_wallpaper {
+                                kill.exclude_wallpaper.push(wallpaper.to_string())
+                            }
+                        }
+                        None => return Err("[Kill] exclude_wallpaper is not an array".to_string()),
+                    }
                 };
-                return Ok(kill)
-            },
-            None => return Ok(kill),
-        };
-
+                Ok(kill)
+            }
+            None => Ok(kill),
+        }
     }
 }
 

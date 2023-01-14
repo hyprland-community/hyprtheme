@@ -65,6 +65,12 @@ pub struct Kill {
 
     #[arg(short, long)]
     pub wallpaper: bool,
+
+    #[arg(short, long, value_parser=parse_list)]
+    pub exclude_bar: Option<Vec<String>>,
+
+    #[arg(short, long, value_parser=parse_list)]
+    pub exclude_wallpaper: Option<Vec<String>>,
 }
 
 #[derive(Parser)]
@@ -95,4 +101,8 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
         }
         Err(e) => Err(e),
     }
+}
+
+fn parse_list(list: &str) -> Result<Vec<String>,String> {
+    Ok(list.split(',').into_iter().map(|s| s.to_string()).collect())
 }

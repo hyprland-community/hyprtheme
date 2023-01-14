@@ -209,12 +209,17 @@ pub struct Util {}
 
 impl Util {
     pub fn kill_all() {
-        Util::kill_all_bars();
-        Util::kill_all_wallpapers();
+        Util::kill_all_bars(None);
+        Util::kill_all_wallpapers(None);
     }
 
-    pub fn kill_all_bars() {
-        let pkill = vec!["swaybar", "waybar", "ironbar"];
+    pub fn kill_all_bars(exclude: Option<Vec<String>>) {
+        let mut pkill = vec!["swaybar", "waybar", "ironbar", "eww"];
+        let exclude = exclude.unwrap_or_default();
+
+        for e in exclude.iter() {
+            pkill.retain(|&p| p != *e);
+        }
 
         for p in pkill.iter() {
             match process::Command::new("pkill").arg(p).spawn() {
@@ -222,15 +227,16 @@ impl Util {
                 Err(_) => println!("{} not running", p),
             }
         }
-
-        match process::Command::new("eww").arg("kill").spawn() {
-            Ok(_) => println!("killed eww"),
-            Err(_) => println!("eww not running"),
-        }
     }
 
-    pub fn kill_all_wallpapers() {
-        let pkill = vec!["swaybg", "wbg", "hyprpaper", "mpvpaper", "swww"];
+    pub fn kill_all_wallpapers(exclude: Option<Vec<String>>) {
+        let mut pkill = vec!["swaybg", "wbg", "hyprpaper", "mpvpaper", "swww"];
+
+        let exclude = exclude.unwrap_or_default();
+
+        for e in exclude.iter() {
+            pkill.retain(|&p| p != *e);
+        }
 
         for p in pkill.iter() {
             match process::Command::new("pkill").arg(p).spawn() {

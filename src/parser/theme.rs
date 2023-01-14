@@ -1,6 +1,57 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use toml::Value;
+
+#[derive(Debug, Clone)]
+pub struct Kill{
+    pub exclude_bar : Vec<String>,
+    pub exclude_wallpaper : Vec<String>,
+}
+
+impl Kill {
+    pub fn from_toml(config:Value)->Result<Kill,String>{
+        let mut kill = Kill{
+            exclude_bar : Vec::new(),
+            exclude_wallpaper : Vec::new(),
+        };
+
+        match config.get("kill") {
+            Some(kill_conf) => {
+                match kill_conf.get("exclude_bar") {
+                    Some(exclude_bar) => {
+                         match exclude_bar.as_array() {
+                            Some(exclude_bar) => {
+                                for bar in exclude_bar {
+                                    kill.exclude_bar.push(bar.to_string())
+                                }
+                            },
+                            None => return Err(format!("[Kill] exclude_bar is not an array")),
+                         }
+                    },
+                    None => {},
+                };
+                match kill_conf.get("exclude_wallpaper") {
+                    Some(exclude_wallpaper) => {
+                         match exclude_wallpaper.as_array() {
+                            Some(exclude_wallpaper) => {
+                                for wallpaper in exclude_wallpaper {
+                                    kill.exclude_wallpaper.push(wallpaper.to_string())
+                                }
+                            },
+                            None => return Err(format!("[Kill] exclude_wallpaper is not an array")),
+                         }
+                    },
+                    None => {},
+                };
+                return Ok(kill)
+            },
+            None => return Ok(kill),
+        };
+
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Theme {
     pub config_path: PathBuf,
@@ -12,6 +63,7 @@ pub struct Theme {
     pub subthemes: Vec<Theme>,
     pub default_subtheme: String,
     pub depends: Vec<String>,
+    pub _kill: Kill,
     pub _repo: Option<String>,
     pub _path: PathBuf,
 }
@@ -96,6 +148,11 @@ impl Theme {
             }
         };
 
+        let kill = match Kill::from_toml(config.clone()) {
+            Ok(kill) => kill,
+            Err(e) => return Err(e),
+        };
+
         let name = match theme_info.get("name") {
             Some(name) => name.as_str().unwrap().to_string(),
             None => String::new(),
@@ -161,6 +218,7 @@ impl Theme {
             git,
             version,
             subthemes,
+            _kill: kill,
             _repo: None,
             _path: path,
             depends,

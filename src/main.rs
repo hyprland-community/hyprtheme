@@ -52,10 +52,10 @@ fn main() {
             UtilSubCommand::Kill(kill) => {
                 if kill.bars {
                     render::warn("killing bars");
-                    util::Util::kill_all_bars();
+                    util::Util::kill_all_bars(kill.exclude_bar);
                 } else if kill.wallpaper {
                     render::warn("killing wallpaper");
-                    util::Util::kill_all_wallpapers();
+                    util::Util::kill_all_wallpapers(kill.exclude_wallpaper);
                 } else {
                     render::warn("killing all");
                     util::Util::kill_all();

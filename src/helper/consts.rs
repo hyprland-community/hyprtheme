@@ -7,6 +7,10 @@ version="1.0.0"
 git="https://github.com/your/repo"
 config="theme.conf"
 depends=["waybar"]
+
+[kill]
+exclude_bars=["eww"]
+exclude_wallpapers=["swww"]
 "#;
 
 pub const T_CONF: &str = r#"
@@ -56,7 +60,6 @@ THEME_DIR=$1
 swww init
 swww img $THEME_DIR/wallpapers/4.jpg --transition-type grow --transition-pos "$(hyprctl cursorpos)"
 
-hyprtheme util kill --bars
 waybar
 "#;
 

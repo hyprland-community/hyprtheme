@@ -43,7 +43,7 @@ https://github.com/hyprland-community/theme-repo/wiki
 ```
 git clone https://github.com/hyprland-community/hyprtheme
 cd hyprtheme
-sudo make all
+make all
 ```
 
 ## Example

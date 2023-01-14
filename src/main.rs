@@ -4,8 +4,8 @@ mod cli;
 mod helper;
 mod parser;
 
-use cli::Hyprtheme;
-use helper::{hypr, util};
+use cli::parse::{Hyprtheme,RepoSubcommand,UtilSubCommand};
+use helper::{apply, util};
 use parser::config::Config;
 
 fn main() {
@@ -14,7 +14,7 @@ fn main() {
         Hyprtheme::Apply(apply) => {
             let config = Config::from_theme(apply.theme);
             println!("applying...");
-            hypr::apply(config);
+            apply::hyprconf(config);
         }
         Hyprtheme::List(list) => {
             if list.deep {
@@ -33,17 +33,17 @@ fn main() {
                 None => {
                     match repo.subcommand {
                         Some(subcommand) => match subcommand {
-                            cli::RepoSubcommand::Install(install) => {
+                            RepoSubcommand::Install(install) => {
                                 println!("installing: {}", install.theme);
                                 match util::Repo::install_theme(install.theme.as_str()) {
                                     Ok(_) => println!("installed: {}", install.theme),
                                     Err(e) => println!("error: {}", e),
                                 };
                             }
-                            cli::RepoSubcommand::Remove(remove) => {
+                            RepoSubcommand::Remove(remove) => {
                                 println!("removing: {}", remove.theme);
                             }
-                            cli::RepoSubcommand::List(_) => {
+                            RepoSubcommand::List(_) => {
                                 for theme in util::Repo::list_themes_deep() {
                                     println!("{}", theme.display());
                                 }
@@ -59,7 +59,7 @@ fn main() {
             };
         }
         Hyprtheme::Util(util) => match util.subcommand {
-            cli::UtilSubCommand::Kill(kill) => {
+            UtilSubCommand::Kill(kill) => {
                 if kill.bars {
                     println!("killing bars");
                     util::Util::kill_all_bars();

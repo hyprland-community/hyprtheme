@@ -13,6 +13,18 @@ pub enum Hyprtheme {
     Init(Init),
 }
 
+#[derive(clap::Subcommand)]
+pub enum RepoSubcommand {
+    Install(Install),
+    Remove(Remove),
+    List(List),
+}
+
+#[derive(clap::Subcommand)]
+pub enum UtilSubCommand {
+    Kill(Kill),
+}
+
 #[derive(Parser)]
 pub struct Apply {
     #[arg(value_parser=parse_theme)]
@@ -23,28 +35,6 @@ pub struct Apply {
 pub struct List {
     #[arg(long, short)]
     pub deep: bool,
-}
-
-fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
-
-    match util::find_theme(nest[0]) {
-        Ok(theme_path) => {
-            let mut t = Theme::from_file(theme_path);
-            if nest.len() > 1 {
-                t.default_subtheme = nest[1..].join(":");
-            }
-            Ok(t)
-        }
-        Err(e) => Err(e),
-    }
-}
-
-#[derive(clap::Subcommand)]
-pub enum RepoSubcommand {
-    Install(Install),
-    Remove(Remove),
-    List(List),
 }
 
 #[derive(Parser)]
@@ -68,11 +58,6 @@ pub struct Repo {
     pub theme: Option<String>,
 }
 
-#[derive(clap::Subcommand)]
-pub enum UtilSubCommand {
-    Kill(Kill),
-}
-
 #[derive(Parser)]
 pub struct Kill {
     #[arg(short, long)]
@@ -92,4 +77,19 @@ pub struct Util {
 pub struct Init {
     #[arg()]
     pub path: Option<PathBuf>,
+}
+
+fn parse_theme(theme_name: &str) -> Result<Theme, String> {
+    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
+
+    match util::find_theme(nest[0]) {
+        Ok(theme_path) => {
+            let mut t = Theme::from_file(theme_path);
+            if nest.len() > 1 {
+                t.default_subtheme = nest[1..].join(":");
+            }
+            Ok(t)
+        }
+        Err(e) => Err(e),
+    }
 }

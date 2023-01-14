@@ -16,7 +16,7 @@ pub fn ensure_config() {
     }
 }
 
-pub fn apply(config: Config) {
+pub fn hyprconf(config: Config) {
     ensure_config();
 
     let dist_path = expanduser::expanduser("~/.config/hypr/themes/dist.conf").unwrap();

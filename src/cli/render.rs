@@ -4,16 +4,20 @@ use colored::*;
 
 use crate::helper::util::ThemeMap;
 
-pub fn list_themes_deep(themes:Vec<ThemeMap>) {
+pub fn list_themes_deep(themes: Vec<ThemeMap>) {
     for theme in themes {
-        println!("{}   {}", theme.name.green().bold(), theme.git.unwrap_or_default().blue().underline());
+        println!(
+            "{}   {}",
+            theme.name.green().bold(),
+            theme.git.unwrap_or_default().blue().underline()
+        );
         for subtheme in theme.subthemes {
             println!("• {}", subtheme.name.yellow());
         }
     }
 }
 
-pub fn list_themes(themes:Vec<String>) {
+pub fn list_themes(themes: Vec<String>) {
     for theme in themes {
         println!("{}", theme.green().bold());
     }
@@ -21,7 +25,7 @@ pub fn list_themes(themes:Vec<String>) {
 
 pub fn apply(config: crate::parser::config::Config) {
     println!("applying {}", config.theme.name.green().bold());
-    match crate::helper::apply::hyprconf(config.to_owned()){
+    match crate::helper::apply::hyprconf(config.to_owned()) {
         Ok(_) => println!("applied {}", &config.theme.name.green().bold()),
         Err(e) => error(e.as_str()),
     };
@@ -48,6 +52,8 @@ pub fn error(msg: &str) {
 }
 
 pub fn template(path: &Path) {
-    println!("created template at {}", path.display().to_string().blue().bold());
+    println!(
+        "created template at {}",
+        path.display().to_string().blue().bold()
+    );
 }
-

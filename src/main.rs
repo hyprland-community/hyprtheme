@@ -4,10 +4,10 @@ mod cli;
 mod helper;
 mod parser;
 
-use cli::parse::{Hyprtheme,RepoSubcommand,UtilSubCommand};
+use cli::parse::{Hyprtheme, RepoSubcommand, UtilSubCommand};
+use cli::render;
 use helper::util;
 use parser::config::Config;
-use cli::render;
 
 fn main() {
     let hyprtheme = Hyprtheme::parse();
@@ -18,9 +18,9 @@ fn main() {
         }
         Hyprtheme::List(list) => {
             if list.deep {
-                render::list_themes_deep(match util::list_themes_deep(){
+                render::list_themes_deep(match util::list_themes_deep() {
                     Ok(t) => t,
-                    Err(e) => return render::error(e.as_str())
+                    Err(e) => return render::error(e.as_str()),
                 })
             } else {
                 render::list_themes(util::list_themes())
@@ -36,18 +36,16 @@ fn main() {
                         println!("removing: {}", remove.theme);
                     }
                     RepoSubcommand::List(_) => {
-                        render::list_themes_deep(match util::Repo::list_themes_deep(){
+                        render::list_themes_deep(match util::Repo::list_themes_deep() {
                             Ok(t) => t,
-                            Err(e) => return render::error(e.as_str())
+                            Err(e) => return render::error(e.as_str()),
                         })
                     }
                 },
-                None => {
-                    render::list_themes_deep(match util::Repo::list_themes_deep(){
-                        Ok(t) => t,
-                        Err(e) => return render::error(e.as_str())
-                    })
-                }
+                None => render::list_themes_deep(match util::Repo::list_themes_deep() {
+                    Ok(t) => t,
+                    Err(e) => return render::error(e.as_str()),
+                }),
             };
         }
         Hyprtheme::Util(util) => match util.subcommand {

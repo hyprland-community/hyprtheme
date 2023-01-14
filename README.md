@@ -25,6 +25,9 @@ exclude_wallpaper = ["swww"]
 ```
 > note all paths will be relative to your toml file path
 
+### sections
+kill -> includes `exclude_bar` and `exclude_wallpaper` these take an array or strings which specify which programs to skip killing when applying this theme
+
 a variable named `$THEME_DIR` will be passed to config files that can be used to link to other files inside theme folder
 
 ## Commands:

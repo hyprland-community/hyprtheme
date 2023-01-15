@@ -48,6 +48,10 @@ pub fn find_theme(theme: &str) -> Result<PathBuf, String> {
     // expand user
     let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
 
+    if theme == "dist" {
+        return Err("dist is a reserved theme_name".to_string());
+    }
+
     for entry in path::Path::new(&theme_dir).read_dir().unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -72,6 +76,9 @@ pub fn list_themes() -> Vec<String> {
     for entry in theme_dir.read_dir().unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
+        if path.file_name().unwrap_or_default() == "dist" {
+            continue;
+        }
         if path.is_dir() && path.join("theme.toml").exists() {
             themes.push(path.file_name().unwrap().to_str().unwrap().to_string());
         }

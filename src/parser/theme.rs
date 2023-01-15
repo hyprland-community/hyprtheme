@@ -52,6 +52,27 @@ impl Kill {
 }
 
 #[derive(Debug, Clone)]
+pub struct Script {
+    pub load: PathBuf,
+    pub cleanup: PathBuf,
+}
+impl Script {
+    pub fn from_toml(config:Value) -> Script{
+        let mut script = Script{
+            load: PathBuf::new(),
+            cleanup: PathBuf::new(),
+        };
+        if let Some(load) = config.get("load"){
+            script.load = PathBuf::from(load.as_str().expect("load is not a string"));
+        }
+        if let Some(cleanup) = config.get("cleanup"){
+            script.cleanup = PathBuf::from(cleanup.as_str().expect("cleanup is not a string"));
+        }
+        script
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Theme {
     pub config_path: PathBuf,
     pub name: String,
@@ -62,6 +83,7 @@ pub struct Theme {
     pub subthemes: Vec<Theme>,
     pub default_subtheme: String,
     pub depends: Vec<String>,
+    pub _script: Script,
     pub _kill: Kill,
     pub _repo: Option<String>,
     pub _path: PathBuf,
@@ -152,6 +174,10 @@ impl Theme {
             Err(e) => return Err(e),
         };
 
+        let script = match Script::from_toml(config.clone()) {
+            script => script,
+        };
+
         let name = match theme_info.get("name") {
             Some(name) => name.as_str().unwrap().to_string(),
             None => String::new(),
@@ -217,11 +243,12 @@ impl Theme {
             git,
             version,
             subthemes,
+            depends,
+            default_subtheme,
+            _script: script,
             _kill: kill,
             _repo: None,
             _path: path,
-            depends,
-            default_subtheme,
         })
     }
 

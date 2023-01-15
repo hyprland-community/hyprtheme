@@ -473,6 +473,7 @@ dependencies = [
  "fast_rsync",
  "fs_extra",
  "gitmodules",
+ "regex",
  "reqwest",
  "toml",
 ]

@@ -30,7 +30,12 @@ pub fn hyprconf(config: Config) -> Result<bool, String> {
         Err(e) => return Err(e),
     };
 
-    let dist_path = expanduser::expanduser("~/.config/hypr/themes/dist.conf").unwrap();
+    let dist_path = expanduser::expanduser("~/.config/hypr/themes/dist/dist.conf").unwrap();
+
+    match fs::create_dir_all(dist_path.parent().unwrap()){
+        Ok(_) => {}
+        Err(e) => return Err(e.to_string()),
+    };
 
     Util::kill_all_bars(Some(config.theme._kill.exclude_bar.to_owned()));
     Util::kill_all_wallpapers(Some(config.theme._kill.exclude_wallpaper.to_owned()));

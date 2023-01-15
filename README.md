@@ -66,10 +66,12 @@ https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-
 
 ## Todo
 
-- [ ] better cli
+- [x] better cli
 - [ ] async requests
 - [ ] handle dependancies for themes
 - [ ] aur pkg
 - [ ] control value of variables in theme
 - [ ] control which components to enable in theme
+- [ ] cleanup script
+- [ ] allow including programs to kill
 

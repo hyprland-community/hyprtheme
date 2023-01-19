@@ -62,10 +62,14 @@ impl Script {
             load: PathBuf::new(),
             cleanup: PathBuf::new(),
         };
-        if let Some(load) = config.get("load"){
+        let script_block = match config.get("script"){
+            Some(script_block) => script_block,
+            None => return script,
+        };
+        if let Some(load) = script_block.get("load"){
             script.load = PathBuf::from(load.as_str().expect("load is not a string"));
         }
-        if let Some(cleanup) = config.get("cleanup"){
+        if let Some(cleanup) = script_block.get("cleanup"){
             script.cleanup = PathBuf::from(cleanup.as_str().expect("cleanup is not a string"));
         }
         script
@@ -90,7 +94,8 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn parse_config(raw: String, path: PathBuf) -> Result<Theme, String> {
+    pub fn parse_config(mut raw: String, path: PathBuf) -> Result<Theme, String> {
+        raw = raw.replace("./", "");
         let config = match raw.parse::<toml::Value>() {
             Ok(config) => config,
             Err(e) => return Err(format!("Error parsing theme config: {} : {}", e, raw)),
@@ -121,7 +126,7 @@ impl Theme {
                 let subtheme_path = {
                     match path.parent() {
                         Some(parent) => parent.join(match subtheme.as_str() {
-                            Some(subtheme) => subtheme.replace("./", ""),
+                            Some(subtheme) => subtheme,
                             None => {
                                 return Err(format!(
                                     "Theme file {} has invalid subtheme(not a string)",
@@ -155,7 +160,7 @@ impl Theme {
                 }
                 path.parent()
                     .expect("theme has no parent directory")
-                    .join(conf.replace("./", ""))
+                    .join(conf)
             }
             None => {
                 if subthemes.is_empty() {
@@ -175,7 +180,15 @@ impl Theme {
         };
 
         let script = match Script::from_toml(config.clone()) {
-            script => script,
+            mut script => {
+                if script.load.is_relative() {
+                    script.load = path.parent().unwrap().join(script.load);
+                }
+                if script.cleanup.is_relative() {
+                    script.cleanup = path.parent().unwrap().join(script.cleanup);
+                }
+                script
+            },
         };
 
         let name = match theme_info.get("name") {
@@ -248,7 +261,7 @@ impl Theme {
             _script: script,
             _kill: kill,
             _repo: None,
-            _path: path,
+            _path: path.parent().unwrap().to_path_buf(),
         })
     }
 

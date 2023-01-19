@@ -40,6 +40,27 @@ pub fn hyprconf(config: Config) -> Result<bool, String> {
     Util::kill_all_bars(Some(config.theme._kill.exclude_bar.to_owned()));
     Util::kill_all_wallpapers(Some(config.theme._kill.exclude_wallpaper.to_owned()));
 
+    let script_conf = config.theme._script.clone();
+    if script_conf.load.is_file() {
+        match Command::new("chmod")
+        .arg("+x")
+        .arg(&script_conf.load)
+        .spawn() {
+            Ok(mut cmd) => match cmd.wait(){
+                Ok(_) => {}
+                Err(e) => return Err(format!("error while running chmod +x for load script : {}",e.to_string())),
+            },
+            Err(e) => return Err(format!("error running chmod +x for load script : {}",e.to_string())),
+        };
+        match Command::new(script_conf.load).arg(&config.theme._path).spawn() {
+            Ok(mut cmd) => match cmd.wait(){
+                Ok(_) => {}
+                Err(e) => return Err(format!("error while running load.sh : {}",e.to_string())),
+            },
+            Err(e) => return Err(format!("error running load.sh : {}",e.to_string())),
+        };
+    }
+
     if dist_path.join("cleanup.sh").is_file() {
         match Command::new(dist_path.join("cleanup.sh")).arg(&config.theme._path).spawn() {
             Ok(mut cmd) => match cmd.wait(){
@@ -55,8 +76,8 @@ pub fn hyprconf(config: Config) -> Result<bool, String> {
         Err(e) => return Err(format!("error writing dist.conf: {}",e.to_string())),
     }
 
-    if config.theme._script.cleanup.is_file(){
-        match fs::copy(config.theme._script.cleanup, dist_path.join("cleanup.sh")){
+    if script_conf.cleanup.is_file(){
+        match fs::copy(script_conf.cleanup, dist_path.join("cleanup.sh")){
             Ok(_) => {}
             Err(e) => return Err(format!("error copying cleanup.sh: {}",e.to_string())),
         };

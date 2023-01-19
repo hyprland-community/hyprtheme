@@ -271,10 +271,20 @@ impl Util {
         fs::write(template_dir.join("theme.toml"), consts::T_TOML).unwrap();
         fs::write(template_dir.join("theme.conf"), consts::T_CONF).unwrap();
         fs::write(template_dir.join("load"), consts::T_LOAD).unwrap();
+        fs::write(template_dir.join("cleanup"), consts::T_CLEANUP).unwrap();
 
         match process::Command::new("chmod")
             .arg("+x")
             .arg(&template_dir.join("load"))
+            .output()
+        {
+            Ok(_) => {}
+            Err(_) => return Err("Failed to set load script as executable".to_string()),
+        };
+
+        match process::Command::new("chmod")
+            .arg("+x")
+            .arg(&template_dir.join("cleanup"))
             .output()
         {
             Ok(_) => {}

@@ -10,12 +10,12 @@ config="theme.conf"
 
 [script]
 cleanup="./cleanup"
-load="./load"
 
 [kill]
 exclude_bars=["eww"]
 exclude_wallpapers=["swww"]
 "#;
+
 
 pub const T_CONF: &str = r#"
 exec = $THEME_DIR/load $THEME_DIR
@@ -54,6 +54,12 @@ dwindle {
     col.group_border=0xff89dceb
     col.group_border_active=0xfff9e2af
 }
+"#;
+
+pub const T_CLEANUP: &str = r#"
+#!/usr/bin/bash
+
+pkill cava
 "#;
 
 pub const T_LOAD: &str = r#"

@@ -130,7 +130,7 @@ impl Repo {
             Err(e) => Err(e),
         }
     }
-    pub fn list_themes() -> Result<Vec<Theme>, String> {
+    pub async fn list_themes() -> Result<Vec<Theme>, String> {
         let modules_url =
             "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
         let raw = reqwest::blocking::get(modules_url).unwrap().text().unwrap();
@@ -160,9 +160,9 @@ impl Repo {
         Ok(themes)
     }
 
-    pub fn list_themes_deep() -> Result<Vec<ThemeMap>, String> {
+    pub async fn list_themes_deep() -> Result<Vec<ThemeMap>, String> {
         let mut themes: Vec<ThemeMap> = Vec::new();
-        for theme in match Repo::list_themes() {
+        for theme in match Repo::list_themes().await {
             Ok(themes) => themes,
             Err(e) => return Err(e),
         } {
@@ -171,10 +171,10 @@ impl Repo {
         Ok(themes)
     }
 
-    pub fn install_theme(theme_name: &str) -> Result<PathBuf, String> {
+    pub async fn install_theme(theme_name: &str) -> Result<PathBuf, String> {
         let theme_dir = expanduser::expanduser("~/.config/hypr/themes").unwrap();
 
-        let themes = match Repo::list_themes() {
+        let themes = match Repo::list_themes().await {
             Ok(themes) => themes,
             Err(e) => return Err(e),
         };

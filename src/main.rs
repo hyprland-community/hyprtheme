@@ -9,7 +9,9 @@ use cli::render;
 use helper::util;
 use parser::config::Config;
 
-fn main() {
+
+#[tokio::main()]
+async fn main() {
     let hyprtheme = Hyprtheme::parse();
     match hyprtheme {
         Hyprtheme::Apply(apply) => {
@@ -30,19 +32,19 @@ fn main() {
             match repo.subcommand {
                 Some(subcommand) => match subcommand {
                     RepoSubcommand::Install(install) => {
-                        render::install(install.theme);
+                        render::install(install.theme).await;
                     }
                     RepoSubcommand::Remove(remove) => {
                         println!("removing: {}", remove.theme);
                     }
                     RepoSubcommand::List(_) => {
-                        render::list_themes_deep(match util::Repo::list_themes_deep() {
+                        render::list_themes_deep(match util::Repo::list_themes_deep().await {
                             Ok(t) => t,
                             Err(e) => return render::error(e.as_str()),
                         })
                     }
                 },
-                None => render::list_themes_deep(match util::Repo::list_themes_deep() {
+                None => render::list_themes_deep(match util::Repo::list_themes_deep().await {
                     Ok(t) => t,
                     Err(e) => return render::error(e.as_str()),
                 }),

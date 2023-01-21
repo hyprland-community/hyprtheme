@@ -31,9 +31,9 @@ pub fn apply(config: crate::parser::config::Config) {
     };
 }
 
-pub fn install(theme: String) {
+pub async fn install(theme: String) {
     println!("installing: {}", theme.yellow().bold());
-    match crate::util::Repo::install_theme(theme.as_str()) {
+    match crate::util::Repo::install_theme(theme.as_str()).await {
         Ok(_) => println!("installed: {}", theme.green().bold()),
         Err(e) => error(e.as_str()),
     };

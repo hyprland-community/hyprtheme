@@ -109,15 +109,17 @@ pub fn list_themes_deep() -> Result<Vec<ThemeMap>, String> {
 pub struct Repo {}
 
 impl Repo {
-    fn get_theme_info(theme_url: &str, branch: Option<&str>) -> Result<Theme, String> {
+    async fn get_theme_info(theme_url: &str, branch: Option<&str>) -> Result<Theme, String> {
         let branch = branch.unwrap_or("master");
-        let theme_raw = reqwest::blocking::get(format!(
+        let theme_raw = reqwest::get(format!(
             "{}/blob/{}/theme.toml?raw=true",
             theme_url.to_owned(),
             branch
         ))
+        .await
         .unwrap()
         .text()
+        .await
         .unwrap();
 
         match Theme::from_string(theme_raw, Path::new("/tmp").to_path_buf()) {
@@ -146,9 +148,9 @@ impl Repo {
                 .to_owned()
                 .1;
 
-            match Repo::get_theme_info(&theme_url, None) {
+            match Repo::get_theme_info(&theme_url, None).await {
                 Ok(theme) => themes.push(theme),
-                Err(e1) => match Repo::get_theme_info(&theme_url, Some("main")) {
+                Err(e1) => match Repo::get_theme_info(&theme_url, Some("main")).await {
                     Ok(theme) => themes.push(theme),
                     Err(e2) => render::warn(format!(
                         "skipping {}, master branch had an error, tried main branch:\n  master: {}\n  main: {}",

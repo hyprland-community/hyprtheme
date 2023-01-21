@@ -10,7 +10,7 @@ use helper::util;
 use parser::config::Config;
 
 
-#[tokio::main()]
+#[tokio::main]
 async fn main() {
     let hyprtheme = Hyprtheme::parse();
     match hyprtheme {

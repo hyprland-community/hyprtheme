@@ -121,7 +121,6 @@ impl Repo {
         .text()
         .await
         .unwrap();
-
         match Theme::from_string(theme_raw, Path::new("/tmp").to_path_buf()) {
             Ok(mut theme) => {
                 if theme._repo.is_none() {
@@ -135,7 +134,7 @@ impl Repo {
     pub async fn list_themes() -> Result<Vec<Theme>, String> {
         let modules_url =
             "https://raw.githubusercontent.com/hyprland-community/theme-repo/main/.gitmodules";
-        let raw = reqwest::blocking::get(modules_url).unwrap().text().unwrap();
+        let raw = reqwest::get(modules_url).await.unwrap().text().await.unwrap();
         let bytereader = BufReader::new(raw.as_bytes());
         let modules = gitmodules::read_gitmodules(bytereader).unwrap();
         let mut themes = Vec::new();

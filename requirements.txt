@@ -1,2 +1,4 @@
 click
 rich
+GitPython
+toml

@@ -1,10 +1,7 @@
 import os
 import requests
 import subprocess
-from rich.console import Console
 import toml
-
-console = Console()
 
 class Script:
     load: os.path
@@ -97,15 +94,13 @@ class Theme(PartialTheme):
     async def from_partial(partialtheme:PartialTheme):
         t = Theme(partialtheme)
 
+        # TODO: somehow get the correct path to theme dir
+
         t.components = []
         if t.raw.get('component'):
-            console.log('components:',t.raw.get('component').items())
             for name,component in t.raw.get('component').items():
                 c = await Component.from_toml(component,name=name)
                 t.components.append(c)
-                console.log('====')
-                console.log(c.name)
-                console.log(c.load())
 
         return t
     

@@ -37,7 +37,7 @@ class Git:
             repo = git.Repo.clone_from(config.THEMEREPO, os.path.join(config.CACHEPATH,'theme_repo'), progress=CloneProgress())
         async with aiohttp.ClientSession() as session:
             for repo in progress.track(repo.iter_submodules(),total=len(repo.submodules),description='Parsing themes'):
-                l.append(await Git.partial_from_git(*repo.url.split('/')[-2:],session=session))
+                l.append(await Git.get_partial(*repo.url.split('/')[-2:],session=session))
         return l
 
     async def get_partial(user,repo,branch='master',session=None):

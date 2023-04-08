@@ -1,15 +1,46 @@
 import git
 import toml
 import os
-import base64
-import json
-import requests
+import aiohttp
 from rich import progress, console
-from rich.theme import Theme
+import rich.theme
 from git import RemoteProgress
+from .objects import Theme
 from . import config
 
+class Git:
+    async def download_theme(theme:str):
+        if theme.startswith('git+'):
+            repo = theme[4:]
+            git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme.split('/')[-1]) , progress=CloneProgress())
+        else:
+            for _theme in await Git.list_themes():
+                if _theme.name == theme:
+                    repo = _theme._repo
+                    if (r:=repo.split('/'))[-2] == 'tree':
+                        branch = r[-1]
+                        repo = '/'.join(r[:-2])
+                    git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme) , progress=CloneProgress(),branch = branch)
+                    return
+                
+    async def list_themes():
+        l = []
+        if os.path.exists(os.path.join(config.CACHEPATH,'theme_repo')):
+            repo = git.Repo(os.path.join(config.CACHEPATH,'theme_repo'))
+            repo.remotes.origin.pull(progress=CloneProgress())
+        else:
+            repo = git.Repo.clone_from(config.THEMEREPO, os.path.join(config.CACHEPATH,'theme_repo'), progress=CloneProgress())
+        async with aiohttp.ClientSession() as session:
+            for repo in progress.track(repo.iter_submodules(),total=len(repo.submodules),description='Parsing themes'):
+                l.append(await Git.get_theme_toml(session,*repo.url.split('/')[-2:]))
+        return l
 
+    async def get_theme_toml(session,user,repo,branch='master'):
+        async with session.get(f'https://raw.githubusercontent.com/{user}/{repo}/{branch}/theme.toml') as resp:
+            if branch != 'main' and resp.status == 404:
+                print('using main branch')
+                return await Git.get_theme_toml(session,user,repo,branch='main')
+            return await Theme.from_toml(toml.loads(await resp.text()),f'https://github.com/{user}/{repo}/tree/{branch}')
 
 class CloneProgress(RemoteProgress):
     OP_CODES = [
@@ -27,7 +58,7 @@ class CloneProgress(RemoteProgress):
         getattr(git.RemoteProgress, _op_code): _op_code for _op_code in OP_CODES
     }
 
-    theme = Theme({
+    theme = rich.theme.Theme({
         "bar.complete": "bold blue",
         "bar.finished": "bold blue",
         "bar.back": "bold dim magenta",
@@ -79,34 +110,7 @@ class CloneProgress(RemoteProgress):
                 task_id=self.active_task,
                 message=f"[bright_black]{message}",
             )
-            
-            
-
-def download_theme(theme:str):
-    if theme.startswith('git+'):
-        repo = theme[4:]
-        git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme.split('/')[-1]) , progress=CloneProgress())
-    else:
-        raise NotImplementedError
-
-
-def list_themes():
-    l = []
-    if os.path.exists(os.path.join(config.CACHEPATH,'theme_repo')):
-        repo = git.Repo(os.path.join(config.CACHEPATH,'theme_repo'))
-        repo.remotes.origin.pull(progress=CloneProgress())
-    else:
-        repo = git.Repo.clone_from(config.THEMEREPO, os.path.join(config.CACHEPATH,'theme_repo'), progress=CloneProgress())
-    for repo in progress.track(repo.iter_submodules(),total=len(repo.submodules),description='Fetching themes'):
-        l.append(get_theme_toml(*repo.url.split('/')[-2:]))
-    return l
-
-def get_theme_toml(user,repo):
-    raw = json.loads(requests.get(f'https://api.github.com/repos/{user}/{repo}/contents/theme.toml').text)
-    if raw.get('content',None) is None:
-        print(raw)
-        return {'theme':{'name':repo}}
-    return toml.loads(base64.b64decode(raw.get('content',None)).decode('utf-8'))
+    
     
 
 

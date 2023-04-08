@@ -1,4 +1,6 @@
-click
+asyncclick
+anyio
+urllib
 rich
 GitPython
 toml

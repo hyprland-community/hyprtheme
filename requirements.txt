@@ -1,6 +1,6 @@
 asyncclick
 anyio
-urllib
+aiohttp
 rich
 GitPython
 toml

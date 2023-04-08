@@ -5,23 +5,28 @@ import aiohttp
 from rich import progress, console
 import rich.theme
 from git import RemoteProgress
-from .objects import Theme
+from .objects import PartialTheme
 from . import config
 
 class Git:
     async def download_theme(theme:str):
         if theme.startswith('git+'):
             repo = theme[4:]
-            git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme.split('/')[-1]) , progress=CloneProgress())
-        else:
-            for _theme in await Git.list_themes():
-                if _theme.name == theme:
-                    repo = _theme._repo
-                    if (r:=repo.split('/'))[-2] == 'tree':
-                        branch = r[-1]
-                        repo = '/'.join(r[:-2])
-                    git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme) , progress=CloneProgress(),branch = branch)
-                    return
+            return git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme.split('/')[-1]) , progress=CloneProgress())
+        
+        for repo_theme in await Git.list_themes():
+            if repo_theme.name == theme:
+                repo = repo_theme._repo
+
+                # TODO: add support for branches
+                if (r:=repo.split('/'))[-2] == 'tree':
+                    branch = r[-1]
+                    repo = '/'.join(r[:-2])
+                
+                git.Repo.clone_from(repo, os.path.join(config.THEMEPATH,theme) , progress=CloneProgress(),branch = branch)
+
+                # TODO: do theme parsing and converting partial to full theme
+                return
                 
     async def list_themes():
         l = []
@@ -32,15 +37,18 @@ class Git:
             repo = git.Repo.clone_from(config.THEMEREPO, os.path.join(config.CACHEPATH,'theme_repo'), progress=CloneProgress())
         async with aiohttp.ClientSession() as session:
             for repo in progress.track(repo.iter_submodules(),total=len(repo.submodules),description='Parsing themes'):
-                l.append(await Git.get_theme_toml(session,*repo.url.split('/')[-2:]))
+                l.append(await Git.partial_from_git(*repo.url.split('/')[-2:],session=session))
         return l
 
-    async def get_theme_toml(session,user,repo,branch='master'):
+    async def get_partial(user,repo,branch='master',session=None):
+        if not session:
+            async with aiohttp.ClientSession() as session:
+                return await Git.get_partial(user,repo,branch=branch,session=session)
         async with session.get(f'https://raw.githubusercontent.com/{user}/{repo}/{branch}/theme.toml') as resp:
             if branch != 'main' and resp.status == 404:
                 print('using main branch')
-                return await Git.get_theme_toml(session,user,repo,branch='main')
-            return await Theme.from_toml(toml.loads(await resp.text()),f'https://github.com/{user}/{repo}/tree/{branch}')
+                return await Git.get_partial(session,user,repo,branch='main')
+            return await PartialTheme.from_toml(toml.loads(await resp.text()),f'https://github.com/{user}/{repo}/tree/{branch}')
 
 class CloneProgress(RemoteProgress):
     OP_CODES = [

@@ -93,7 +93,7 @@ class PartialTheme:
 
         return t
     
-class _Theme(PartialTheme):
+class Theme(PartialTheme):
     async def from_partial(partialtheme:PartialTheme):
         t = Theme(partialtheme)
 

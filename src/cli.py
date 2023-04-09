@@ -10,14 +10,18 @@ async def cli():
 console = Console()
 
 @cli.command(help='Install a theme')
-@click.argument('theme')
+@click.argument('theme', required=False)
 @click.option('--local', '-l', help='provide the path of local theme zip', default=False, is_flag=True)
-async def install(theme:str,local:bool=False):
-    if local:
-        click.echo('Installing from local')
-    else:
-        click.echo('Installing from remote')
-    await Git.download_theme(theme)
+async def install(theme:str=None,local:bool=False):
+    partial = None
+    if not theme:
+        partial = await Git.select_theme()
+        theme = partial.name
+        console.print(f'installing theme :: {theme}')
+    click.echo('Installing from remote')
+    if partial or theme:
+        await Git.download_theme(partial or theme)
+    console.print(f'[green]Theme {theme} installed[/]')
 
 @cli.command(help='Uninstall a theme')
 @click.argument('theme')

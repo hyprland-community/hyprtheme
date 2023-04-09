@@ -62,8 +62,11 @@ class PartialTheme:
     raw: dict[str,any]
     _repo: str
     _path: os.path
+    _user: str
+    _branch: str
+    _git: str
 
-    async def from_toml(theme:dict[str,any],_repo=None):
+    async def from_toml(theme:dict[str,any],user=None,repo=None, branch='main'):
         t = PartialTheme()
         t.raw = theme
         t.name = theme.get('theme').get('name')
@@ -73,11 +76,13 @@ class PartialTheme:
         t.version = theme.get('theme').get('version')
         t.default_subtheme = theme.get('theme').get('default_subtheme')
         t.depends = theme.get('theme').get('depends')
-        t._repo = _repo or t.repo
+        t._repo = repo or t.repo
+        t._user = user or t.repo.split('/')[0]
+        t._git = f'https://github.com/{user}/{repo}'
+        t._branch = branch
 
         t.subthemes = []
         for subtheme in theme.get('theme').get('subthemes') or []:
-            branch,_,repo,user = t._repo.split('/')[::-1][:4]
 
             path = subtheme
             if path.startswith('/'):
@@ -85,7 +90,7 @@ class PartialTheme:
             elif path.startswith('./'):
                 path = path[2:]
 
-            raw = requests.get(f'https://raw.githubusercontent.com/{user}/{repo}/{branch}/{path}')
+            raw = requests.get(f'https://raw.githubusercontent.com/{t._user}/{t._repo}/{t._branch}/{path}')
             t.subthemes.append(await PartialTheme.from_toml(toml.loads(raw.text),t._repo))
 
         return t

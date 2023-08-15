@@ -4,8 +4,7 @@ use std::{fs, process::Command};
 use crate::{helper::consts, parser::config::Config, util::Util};
 
 pub fn ensure_config() -> Result<bool, String> {
-    let hypr_config =
-        expanduser::expanduser(format!("{}/.config/hypr/hyprland.conf", env!("HOME"))).unwrap();
+    let hypr_config = expanduser::expanduser("~/.config/hypr/hyprland.conf").unwrap();
 
     let conf = match hypr_config.exists() {
         true => match fs::read_to_string(&hypr_config) {
@@ -32,8 +31,7 @@ pub fn hyprconf(config: Config) -> Result<bool, String> {
         Err(e) => return Err(e),
     };
 
-    let dist_path =
-        expanduser::expanduser(format!("{}/.config/hypr/themes/dist/", env!("HOME"))).unwrap();
+    let dist_path = expanduser::expanduser("~/.config/hypr/themes/dist/").unwrap();
 
     match fs::create_dir_all(&dist_path) {
         Ok(_) => {}

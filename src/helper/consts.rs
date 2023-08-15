@@ -16,7 +16,6 @@ exclude_bars=["eww"]
 exclude_wallpapers=["swww"]
 "#;
 
-
 pub const T_CONF: &str = r#"
 exec = $THEME_DIR/load $THEME_DIR
 

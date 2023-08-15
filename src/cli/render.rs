@@ -1,8 +1,7 @@
 use std::path::Path;
 
-use colored::*;
-
 use crate::helper::util::ThemeMap;
+use owo_colors::OwoColorize;
 
 pub fn list_themes_deep(themes: Vec<ThemeMap>) {
     for theme in themes {
@@ -26,34 +25,39 @@ pub fn list_themes(themes: Vec<String>) {
 pub fn apply(config: crate::parser::config::Config) {
     println!("applying {}", config.theme.name.green().bold());
     match crate::helper::apply::hyprconf(config.to_owned()) {
-        Ok(_) => println!("applied {}", &config.theme.name.green().bold()),
-        Err(e) => error(e.as_str()),
+        Ok(_) => println!(
+            "{} applied {}",
+            "[  ]:".green().bold(),
+            config.theme.name.bold()
+        ),
+        Err(e) => error(e),
     };
 }
 
 pub async fn install(theme: String) {
     println!("installing: {}", theme.yellow().bold());
     match crate::util::Repo::install_theme(theme.as_str()).await {
-        Ok(_) => println!("installed: {}", theme.green().bold()),
-        Err(e) => error(e.as_str()),
+        Ok(_) => println!("{} installed: {}", "[  ]:".green().bold(), theme.bold()),
+        Err(e) => error(e),
     };
 }
 
-pub fn info(msg: &str) {
-    println!("{}", msg.green().bold());
-}
-
 pub fn warn(msg: &str) {
-    println!("{}", msg.black().on_yellow().bold());
+    println!(
+        "{} {}",
+        "[ ! ]:".yellow().bold(),
+        msg.black().on_yellow().bold()
+    );
 }
 
-pub fn error(msg: &str) {
-    println!("{}", msg.black().on_red().bold());
+pub fn error(msg: impl Into<String>) {
+    println!("{} {}", "[  ]:".red().bold(), msg.into().bold());
 }
 
 pub fn template(path: &Path) {
     println!(
-        "created template at {}",
+        "{} created template at: {}",
+        "[  ]:".green().bold(),
         path.display().to_string().blue().bold()
     );
 }

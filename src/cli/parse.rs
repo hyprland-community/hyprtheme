@@ -86,7 +86,7 @@ pub struct Init {
 }
 
 fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
+    let nest = theme_name.split(':').collect::<Vec<&str>>();
 
     match util::find_theme(nest[0]) {
         Ok(theme_path) => {
@@ -104,5 +104,5 @@ fn parse_theme(theme_name: &str) -> Result<Theme, String> {
 }
 
 fn parse_list(list: &str) -> Result<Vec<String>, String> {
-    Ok(list.split(',').into_iter().map(|s| s.to_string()).collect())
+    Ok(list.split(',').map(|s| s.to_string()).collect())
 }

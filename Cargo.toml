@@ -7,11 +7,11 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0", features = ["derive", "wrap_help", "env"] }
-colored = "2.0.0"
 expanduser = "1.2.2"
 fast_rsync = "0.1.4"
 fs_extra = "1.2.0"
 gitmodules = "0.1.0"
+owo-colors = "3.5.0"
 regex = "1.7.1"
 reqwest = "0.11.13"
 tokio = { version = "1.24", features = ["rt-multi-thread","macros"] }

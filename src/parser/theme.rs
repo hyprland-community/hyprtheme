@@ -22,9 +22,11 @@ impl Kill {
                     match exclude_bar.as_array() {
                         Some(exclude_bar) => {
                             for bar in exclude_bar {
-                                kill.exclude_bar.push(match bar.as_str(){
+                                kill.exclude_bar.push(match bar.as_str() {
                                     Some(bar) => bar.to_string(),
-                                    None => return Err("[Kill] exclude_bar is not a string".to_string()),
+                                    None => {
+                                        return Err("[Kill] exclude_bar is not a string".to_string())
+                                    }
                                 })
                             }
                         }
@@ -35,9 +37,13 @@ impl Kill {
                     match exclude_wallpaper.as_array() {
                         Some(exclude_wallpaper) => {
                             for wallpaper in exclude_wallpaper {
-                                kill.exclude_wallpaper.push(match wallpaper.as_str(){
+                                kill.exclude_wallpaper.push(match wallpaper.as_str() {
                                     Some(wallpaper) => wallpaper.to_string(),
-                                    None => return Err("[Kill] exclude_wallpaper is not a string".to_string()),
+                                    None => {
+                                        return Err(
+                                            "[Kill] exclude_wallpaper is not a string".to_string()
+                                        )
+                                    }
                                 })
                             }
                         }
@@ -57,19 +63,19 @@ pub struct Script {
     pub cleanup: PathBuf,
 }
 impl Script {
-    pub fn from_toml(config:Value) -> Script{
-        let mut script = Script{
+    pub fn from_toml(config: Value) -> Script {
+        let mut script = Script {
             load: PathBuf::new(),
             cleanup: PathBuf::new(),
         };
-        let script_block = match config.get("script"){
+        let script_block = match config.get("script") {
             Some(script_block) => script_block,
             None => return script,
         };
-        if let Some(load) = script_block.get("load"){
+        if let Some(load) = script_block.get("load") {
             script.load = PathBuf::from(load.as_str().expect("load is not a string"));
         }
-        if let Some(cleanup) = script_block.get("cleanup"){
+        if let Some(cleanup) = script_block.get("cleanup") {
             script.cleanup = PathBuf::from(cleanup.as_str().expect("cleanup is not a string"));
         }
         script
@@ -179,16 +185,15 @@ impl Theme {
             Err(e) => return Err(e),
         };
 
-        let script = match Script::from_toml(config.clone()) {
-            mut script => {
-                if script.load.is_relative() {
-                    script.load = path.parent().unwrap().join(script.load);
-                }
-                if script.cleanup.is_relative() {
-                    script.cleanup = path.parent().unwrap().join(script.cleanup);
-                }
-                script
-            },
+        let mut script = Script::from_toml(config.clone());
+        let script = {
+            if script.load.is_relative() {
+                script.load = path.parent().unwrap().join(script.load);
+            }
+            if script.cleanup.is_relative() {
+                script.cleanup = path.parent().unwrap().join(script.cleanup);
+            }
+            script
         };
 
         let name = match theme_info.get("name") {

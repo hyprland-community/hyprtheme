@@ -9,7 +9,6 @@ use cli::render;
 use helper::util;
 use parser::config::Config;
 
-
 #[tokio::main]
 async fn main() {
     let hyprtheme = Hyprtheme::parse();

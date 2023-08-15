@@ -1,5 +1,10 @@
 # Hyprtheme
 
+## quick install: 
+```zsh
+cargo install --git https://github.com/hyprland-community/hyprtheme
+```
+
 works with themes installed at `~/.config/hypr/themes`
 
 additional themes can be installed from [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo)
@@ -52,9 +57,7 @@ https://github.com/hyprland-community/theme-repo/wiki
 
 > from git
 ```
-git clone https://github.com/hyprland-community/hyprtheme
-cd hyprtheme
-make all
+cargo install --git https://github.com/hyprland-community/hyprtheme
 ```
 
 ## Example

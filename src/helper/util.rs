@@ -31,7 +31,7 @@ pub fn get_subtheme(theme: &Theme) -> Option<Theme> {
     let subtheme_str = &theme.default_subtheme;
 
     if !subtheme_str.trim().is_empty() {
-        let nest = subtheme_str.split(':').into_iter().collect::<Vec<&str>>();
+        let nest = subtheme_str.split(':').collect::<Vec<&str>>();
 
         let mut subtheme = theme.subthemes.iter().find(|t| t.name == nest[0]).unwrap();
 

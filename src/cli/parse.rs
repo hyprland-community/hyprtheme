@@ -21,7 +21,8 @@ pub struct Apply {
 
 #[derive(Parser)]
 pub struct List {
-    pub installed: bool,
+    // #[arg(default_value = "false")]
+    // pub installed: bool,
 }
 
 #[derive(Parser)]

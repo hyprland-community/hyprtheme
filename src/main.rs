@@ -1,12 +1,13 @@
 // use clap::Parser;
 
-// mod cli;
+mod cli;
 // mod helper;
 // mod parser;
 mod repo;
 mod util;
 
-// use cli::parse::Hyprtheme;
+use clap::Parser;
+use cli::parse::Hyprtheme;
 // use cli::render;
 // use helper::util;
 // use parser::config::Config;
@@ -14,22 +15,20 @@ mod util;
 
 #[tokio::main]
 async fn main() {
-    let themes = repo::fetch_themes(None).await.unwrap();
-    println!("{:?}", themes);
+    match Hyprtheme::parse() {
+        Hyprtheme::Apply(apply) => {
+            println!("apply");
+        },
+        Hyprtheme::List(list) => {
+            for theme in repo::fetch_themes().await.unwrap().themes {
+                println!("{}", theme);
+            }
+        },
+        Hyprtheme::Install(install) => {
+            println!("install");
+        },
+        Hyprtheme::Uninstall(uninstall) => {
+            println!("uninstall");
+        },
+    }
 }
-//     let hyprtheme = Hyprtheme::parse();
-//     match hyprtheme {
-//         Hyprtheme::Apply(apply) => {
-//             let config = Config::from_theme(apply.theme);
-//             render::apply(config)
-//         }
-//         Hyprtheme::List(list) => {
-//         }
-//         Hyprtheme::Install(install) => {
-//             render::install(install.theme).await;
-//         }
-//         Hyprtheme::Uninstall(remove) => {
-//             println!("removing: {}", remove.theme);
-//         }
-//     }
-// }

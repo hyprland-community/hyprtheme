@@ -1,7 +1,8 @@
 use std::path::PathBuf;
-
-use crate::{parser::theme::Theme, util};
 use clap::Parser;
+
+use crate::repo::find_theme;
+use crate::util::theme::Theme;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -20,6 +21,7 @@ pub struct Apply {
 
 #[derive(Parser)]
 pub struct List {
+    pub installed: bool,
 }
 
 #[derive(Parser)]
@@ -27,7 +29,7 @@ pub struct Install {
     pub theme: String,
 
     #[arg(short, long, default_value = "~/.config/hypr/themes")]
-    pub path: PathBuf,
+    pub target: PathBuf,
 }
 
 #[derive(Parser)]
@@ -37,19 +39,5 @@ pub struct Uninstall {
 }
 
 fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
-
-    match util::find_theme(nest[0]) {
-        Ok(theme_path) => {
-            let mut t = match Theme::from_file(theme_path) {
-                Ok(theme) => theme,
-                Err(e) => return Err(e),
-            };
-            if nest.len() > 1 {
-                t.default_subtheme = nest[1..].join(":");
-            }
-            Ok(t)
-        }
-        Err(e) => Err(e),
-    }
+    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name))
 }

@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Themes {
     pub themes: Vec<Theme>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Theme {
     pub name: String,
     pub repo: String,
@@ -13,6 +13,7 @@ pub struct Theme {
     pub config: String,
     pub desc: String,
     pub images: Vec<String>,
+    // _installed: bool
 }
 
 impl Theme {
@@ -33,5 +34,16 @@ impl Theme {
             },
             Err(e) => Err(e.to_string()),
         }
+    }
+}
+
+// display
+impl std::fmt::Display for Theme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut images = String::new();
+        for image in &self.images {
+            images.push_str(&format!("{}\n", image));
+        }
+        write!(f, "Name: {}\nRepo: {}\nBranch: {}\nConfig: {}\nDesc: {}\nImages:\n{}", self.name, self.repo, self.branch, self.config, self.desc, images)
     }
 }

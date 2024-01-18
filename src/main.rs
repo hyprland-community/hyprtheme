@@ -20,7 +20,7 @@ async fn main() {
             println!("apply");
         },
         Hyprtheme::List(list) => {
-            for theme in repo::fetch_themes().await.unwrap().themes {
+            for theme in repo::fetch_themes(list.theme_dir).await.unwrap().themes {
                 println!("{}", theme);
             }
         },

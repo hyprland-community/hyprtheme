@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::util::ansi::{red, green, black, reset, yellow, bold};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Themes {
@@ -13,7 +14,7 @@ pub struct Theme {
     pub config: String,
     pub desc: String,
     pub images: Vec<String>,
-    // _installed: bool
+    pub _installed: Option<bool>
 }
 
 impl Theme {
@@ -44,6 +45,13 @@ impl std::fmt::Display for Theme {
         for image in &self.images {
             images.push_str(&format!("{}\n", image));
         }
-        write!(f, "Name: {}\nRepo: {}\nBranch: {}\nConfig: {}\nDesc: {}\nImages:\n{}", self.name, self.repo, self.branch, self.config, self.desc, images)
+        write!(
+            f,
+            "{}{}{}{}",
+            reset(),match self._installed {
+                Some(true) => green(false)+&bold()+"● ",
+                _ => String::from("○ "),
+            },self.name,reset()
+        )
     }
 }

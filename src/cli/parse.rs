@@ -21,24 +21,39 @@ pub struct Apply {
 
 #[derive(Parser)]
 pub struct List {
-    // #[arg(default_value = "false")]
-    // pub installed: bool,
+
+    #[arg(short,long,default_value = "false")]
+    pub installed: bool,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct Install {
     pub theme: String,
 
-    #[arg(short, long, default_value = "~/.config/hypr/themes")]
-    pub target: PathBuf,
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct Uninstall {
-    #[arg()]
     pub theme: String,
 }
 
+fn parse_path(path: &str) -> Result<PathBuf, String> {
+    // expand ~
+    let path = shellexpand::tilde(path);
+    let path = path.as_ref();
+    let path = PathBuf::from(path);
+    if path.exists() {
+        Ok(path)
+    } else {
+        Err(format!("Path does not exist: {}", path.display()))
+    }
+}
+
 fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name))
+    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name,PathBuf::new()))
 }

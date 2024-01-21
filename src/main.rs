@@ -34,7 +34,13 @@ async fn main() {
             }
         },
         Hyprtheme::Uninstall(uninstall) => {
-            println!("uninstall");
+            let theme = repo::find_theme(&uninstall.theme,&uninstall.theme_dir).await.unwrap();
+            println!("found {}", theme);
+
+            match theme.uninstall(Some(uninstall.theme_dir)) {
+                Ok(_) => println!("uninstalled"),
+                Err(e) => println!("{}", e),
+            }
         },
     }
 }

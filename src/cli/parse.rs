@@ -40,6 +40,9 @@ pub struct Install {
 #[derive(Parser)]
 pub struct Uninstall {
     pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 fn parse_path(path: &str) -> Result<PathBuf, String> {

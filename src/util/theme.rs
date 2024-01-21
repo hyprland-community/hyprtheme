@@ -69,6 +69,28 @@ impl Theme {
         }
 
     }
+
+    pub fn uninstall(&self, install_dir: Option<PathBuf>) -> Result<(),String> {
+        let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
+
+        //standardize theme name
+        let theme_name = self.name.to_lowercase().replace(" ", "_");
+
+        let theme_dir = install_dir.join(&theme_name);
+
+        // check if theme is already installed
+        if !theme_dir.exists() {
+            return Err(format!("Theme {} is not installed", &self.name));
+        }
+
+        println!("Uninstalling theme {} from {}\n", &self.name, theme_dir.to_str().unwrap());
+        
+        // delete dir
+        match std::fs::remove_dir_all(theme_dir) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e.to_string()),
+        }
+    }
 }
 
 // display

@@ -29,10 +29,10 @@ pub async fn fetch_themes(theme_dir: &PathBuf, file_url:Option<&str>) -> Result<
 
     progress_bar.set_style(
         ProgressStyle::default_spinner()
-            .template("{spinner} {msg}").unwrap().tick_chars("🌑🌒🌓🌔🌕🌖🌗🌘")
+            .template("{spinner} {msg}").unwrap().tick_chars("🌑🌒🌓🌔🌕🌖🌗🌘|")
     );
 
-    progress_bar.enable_steady_tick(Duration::from_millis(100));
+    progress_bar.enable_steady_tick(Duration::from_millis(50));
 
     progress_bar.set_message("Fetching themes");
 

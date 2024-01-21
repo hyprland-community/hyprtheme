@@ -1,20 +1,16 @@
-// use clap::Parser;
+use clap::Parser;
 
 mod cli;
-// mod helper;
-// mod parser;
-mod repo;
 mod util;
 
-use clap::Parser;
+use util::repo;
+use util::ansi::{red, reset,bold};
+
 use cli::parse::Hyprtheme;
-use util::{ansi::{red, reset,bold}, theme::Theme};
+
 use expanduser::expanduser;
 
 use std::{path::PathBuf, process::ExitCode};
-// use cli::render;
-// use helper::util;
-// use parser::config::Config;
 
 
 async fn install_theme(theme: String, theme_dir: PathBuf) -> ExitCode {

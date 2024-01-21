@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-use crate::util::ansi::{red, green, black, reset, yellow, bold};
+use crate::util::ansi::{green, reset, bold};
 
 use expanduser::expanduser;
 

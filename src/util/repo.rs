@@ -4,7 +4,6 @@ use reqwest::Client;
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::util::theme::{Themes, Theme};
-use std::cmp::min;
 
 pub fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
     let dir = theme_dir.join(theme_name);

@@ -8,13 +8,16 @@ mod util;
 
 use clap::Parser;
 use cli::parse::Hyprtheme;
+use util::ansi::{red, reset,bold};
+
+use std::process::ExitCode;
 // use cli::render;
 // use helper::util;
 // use parser::config::Config;
 
 
 #[tokio::main]
-async fn main() {
+async fn main() -> ExitCode{
     match Hyprtheme::parse() {
         Hyprtheme::Apply(apply) => {
             println!("apply");
@@ -25,22 +28,41 @@ async fn main() {
             }
         },
         Hyprtheme::Install(install) => {
-            let theme = repo::find_theme(&install.theme,&install.theme_dir).await.unwrap();
+            let theme = match repo::find_theme(&install.theme,&install.theme_dir).await {
+                Ok(theme) => theme,
+                Err(e) => {
+                    eprintln!("{}{}{}",reset() + &red(false) + &bold() ,e,reset());
+                    return ExitCode::FAILURE;
+                },
+            };
             println!("found {}", theme);
 
             match theme.install(Some(install.theme_dir)) {
                 Ok(_) => println!("\ninstalled"),
-                Err(e) => println!("{}", e),
+                Err(e) => {
+                    eprintln!("{}{}{}",reset() + &red(false) + &bold() ,e,reset());
+                    return ExitCode::FAILURE;
+                },
             }
         },
         Hyprtheme::Uninstall(uninstall) => {
-            let theme = repo::find_theme(&uninstall.theme,&uninstall.theme_dir).await.unwrap();
+            let theme = match repo::find_theme(&uninstall.theme,&uninstall.theme_dir).await {
+                Ok(theme) => theme,
+                Err(e) => {
+                    eprintln!("{}{}{}",reset() + &red(false) + &bold() ,e,reset());
+                    return ExitCode::FAILURE;
+                },
+            };
             println!("found {}", theme);
 
             match theme.uninstall(Some(uninstall.theme_dir)) {
                 Ok(_) => println!("uninstalled"),
-                Err(e) => println!("{}", e),
+                Err(e) => {
+                    eprintln!("{}{}{}",reset() + &red(false) + &bold() ,e,reset());
+                    return ExitCode::FAILURE;
+                },
             }
         },
     }
+    return ExitCode::SUCCESS;
 }

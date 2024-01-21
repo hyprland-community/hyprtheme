@@ -83,7 +83,7 @@ impl Theme {
             return Err(format!("Theme {} is not installed", &self.name));
         }
 
-        println!("Uninstalling theme {} from {}\n", &self.name, theme_dir.to_str().unwrap());
+        println!("Uninstalling theme {} from {}", &self.name, theme_dir.to_str().unwrap());
         
         // delete dir
         match std::fs::remove_dir_all(theme_dir) {

@@ -55,5 +55,5 @@ fn parse_path(path: &str) -> Result<PathBuf, String> {
 }
 
 fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name,PathBuf::new()))
+    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name,&PathBuf::new()))
 }

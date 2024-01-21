@@ -1,5 +1,9 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use crate::util::ansi::{red, green, black, reset, yellow, bold};
+
+use expanduser::expanduser;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Themes {
@@ -35,6 +39,35 @@ impl Theme {
             },
             Err(e) => Err(e.to_string()),
         }
+    }
+
+    pub fn install(&self, install_dir: Option<PathBuf>) -> Result<(), String>{
+        let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
+
+        //standardize theme name
+        let theme_name = self.name.to_lowercase().replace(" ", "_");
+
+        let theme_dir = install_dir.join(&theme_name);
+
+        // check if theme is already installed
+        if theme_dir.exists() {
+            return Err(format!("Theme {} is already installed", &self.name));
+        }
+
+        println!("Installing theme {} to {}", &self.name, theme_dir.to_str().unwrap());
+        // clone repo
+        let clone_cmd = format!("git clone --depth 1 --branch {} {} {}", &self.branch, &self.repo, theme_dir.to_str().unwrap());
+        
+        match std::process::Command::new("sh")
+        .arg("-c")
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .arg(&clone_cmd)
+        .output() {
+            Ok(_) => Ok(()),
+            Err(e) => return Err(e.to_string()),
+        }
+
     }
 }
 

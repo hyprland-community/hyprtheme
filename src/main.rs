@@ -20,12 +20,18 @@ async fn main() {
             println!("apply");
         },
         Hyprtheme::List(list) => {
-            for theme in repo::fetch_themes(list.theme_dir).await.unwrap().themes {
+            for theme in repo::fetch_themes(&list.theme_dir,None).await.unwrap().themes {
                 println!("{}", theme);
             }
         },
         Hyprtheme::Install(install) => {
-            println!("install");
+            let theme = repo::find_theme(&install.theme,&install.theme_dir).await.unwrap();
+            println!("found {}", theme);
+
+            match theme.install(Some(install.theme_dir)) {
+                Ok(_) => println!("installed"),
+                Err(e) => println!("{}", e),
+            }
         },
         Hyprtheme::Uninstall(uninstall) => {
             println!("uninstall");

@@ -11,6 +11,12 @@ pub enum Hyprtheme {
     List(List),
     Install(Install),
     Uninstall(Uninstall),
+    Uri(Uri),
+}
+
+#[derive(Parser)]
+pub struct Uri {
+    pub uri: String,
 }
 
 #[derive(Parser)]

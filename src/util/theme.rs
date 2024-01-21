@@ -54,7 +54,7 @@ impl Theme {
             return Err(format!("Theme {} is already installed", &self.name));
         }
 
-        println!("Installing theme {} to {}", &self.name, theme_dir.to_str().unwrap());
+        println!("Installing theme {} to {}\n", &self.name, theme_dir.to_str().unwrap());
         // clone repo
         let clone_cmd = format!("git clone --depth 1 --branch {} {} {}", &self.branch, &self.repo, theme_dir.to_str().unwrap());
         

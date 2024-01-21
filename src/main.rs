@@ -29,7 +29,7 @@ async fn main() {
             println!("found {}", theme);
 
             match theme.install(Some(install.theme_dir)) {
-                Ok(_) => println!("installed"),
+                Ok(_) => println!("\ninstalled"),
                 Err(e) => println!("{}", e),
             }
         },

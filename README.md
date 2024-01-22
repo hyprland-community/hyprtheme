@@ -8,8 +8,8 @@ additional themes can be installed from [hyprland-community/theme-repo](https://
 
 ## Features
 
-- browse themes in [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo)
-- install themes from [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo)
+- browse themes in [hyprland-community/theme-repo](theme-repo)
+- install themes from [hyprland-community/theme-repo](theme-repo)
 - uninstall themes
 - enable/disable themes
 - passes a `$<theme-name>` variable to enabled themes that contains the path to theme directory

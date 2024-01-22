@@ -1,11 +1,8 @@
-use std::path::{self, PathBuf};
+use std::path::PathBuf;
 
 use expanduser::expanduser;
 
-use super::{
-    repo,
-    theme::{self, Theme},
-};
+use super::theme::Theme;
 
 pub struct Module {
     pub name: String,
@@ -86,7 +83,10 @@ impl Config {
                         let module_path = parent_path.join(module);
                         if module_path.exists() {
                             let module = Module::new(None, module_path);
-                            config.add_module(module);
+                            match config.add_module(module){
+                                Ok(_) => (),
+                                Err(e) => println!("{}", e)
+                            };
                         }
                     }
                 }

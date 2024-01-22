@@ -11,7 +11,7 @@ use cli::parse::Hyprtheme;
 
 use expanduser::expanduser;
 
-use std::fmt::format;
+
 use std::{path::PathBuf, process::ExitCode};
 
 async fn install_theme(theme: String, theme_dir: PathBuf) -> ExitCode {

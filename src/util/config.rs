@@ -2,7 +2,10 @@ use std::path::{self, PathBuf};
 
 use expanduser::expanduser;
 
-use super::{repo, theme::{self, Theme}};
+use super::{
+    repo,
+    theme::{self, Theme},
+};
 
 pub struct Module {
     pub name: String,
@@ -18,9 +21,11 @@ impl Module {
             path,
         }
     }
-    
+
     pub fn from_theme(theme: Theme) -> Module {
-        let path = expanduser("~/.config/hypr/themes/").unwrap().join(&theme.name.to_lowercase().replace(" ", "_"));
+        let path = expanduser("~/.config/hypr/themes/")
+            .unwrap()
+            .join(&theme.name.to_lowercase().replace(" ", "_"));
         Module {
             name: path.file_name().unwrap().to_str().unwrap().to_string(),
             theme: Some(theme),
@@ -34,7 +39,7 @@ pub struct Config {
     pub path: PathBuf,
 }
 
-impl Config { 
+impl Config {
     pub fn new() -> Config {
         Config {
             modules: Vec::new(),
@@ -42,9 +47,8 @@ impl Config {
         }
     }
 
-    pub fn ensure_exists(&mut self) -> Result<(),String> {
+    pub fn ensure_exists(&mut self) -> Result<(), String> {
         if !self.path.exists() {
-
             let parent = self.path.parent().unwrap();
             if !parent.exists() {
                 std::fs::create_dir_all(parent).unwrap();
@@ -54,7 +58,7 @@ impl Config {
                 Ok(_) => Ok(()),
                 Err(e) => Err(format!("Failed to write to {}: {}", self.path.display(), e)),
             }
-        }else{
+        } else {
             Ok(())
         }
     }
@@ -72,9 +76,9 @@ impl Config {
 
         // parse file
         let mut lines = file.lines();
-        
+
         for line in &mut lines {
-            if line.starts_with("# modules:"){
+            if line.starts_with("# modules:") {
                 let modules = line.strip_prefix("# modules:").unwrap().split(",");
                 for module in modules {
                     let module = module.trim();
@@ -92,7 +96,7 @@ impl Config {
         config
     }
 
-    pub fn add_module(&mut self, module: Module) -> Result<(),String>  {
+    pub fn add_module(&mut self, module: Module) -> Result<(), String> {
         for m in &self.modules {
             if m.name == module.name {
                 return Err(format!("Module {} already exists", module.name));
@@ -102,19 +106,21 @@ impl Config {
         Ok(())
     }
 
-    pub fn remove_module(&mut self, module: Module) -> Result<(),String>  {
-        self.modules.retain(|m| {
-            module.name != m.name
-        });
+    pub fn remove_module(&mut self, module: Module) -> Result<(), String> {
+        self.modules.retain(|m| module.name != m.name);
         Ok(())
     }
 
-    pub fn cleanup(&mut self) -> Result<(),String>  {
+    pub fn cleanup(&mut self) -> Result<(), String> {
         for module in &self.modules {
             let cleanup_path = module.path.join("cleanup.sh");
-            println!("cleanup_path: {}",&cleanup_path.display());
+            println!("cleanup_path: {}", &cleanup_path.display());
             if cleanup_path.exists() {
-                match std::process::Command::new("chmod").arg("+x").arg(&cleanup_path).output() {
+                match std::process::Command::new("chmod")
+                    .arg("+x")
+                    .arg(&cleanup_path)
+                    .output()
+                {
                     Ok(_) => println!("chmod cleanup script of {}", module.name),
                     Err(e) => return Err(format!("Failed to chmod cleanup script: {}", e)),
                 }
@@ -133,31 +139,53 @@ impl Config {
         for module in &self.modules {
             let theme_name = match &module.theme {
                 Some(theme) => theme.name.to_lowercase().replace(" ", "_"),
-                None => module.path.file_name().unwrap().to_str().unwrap().to_string(),
+                None => module
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
             };
             config.push_str(format!("{},", theme_name).as_str());
-        }config.push('\n');
+        }
+        config.push('\n');
 
         // variables
         config.push_str("\n# variables\n");
         for module in &self.modules {
             let theme_name = match &module.theme {
                 Some(theme) => theme.name.to_lowercase().replace(" ", "_"),
-                None => module.path.file_name().unwrap().to_str().unwrap().to_string(),
+                None => module
+                    .path
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
             };
-            config.push_str(format!("${}={}\n", theme_name.to_lowercase().replace(" ","_"),module.path.display()).as_str());
-        }config.push_str("\n# variables end\n");
+            config.push_str(
+                format!(
+                    "${}={}\n",
+                    theme_name.to_lowercase().replace(" ", "_"),
+                    module.path.display()
+                )
+                .as_str(),
+            );
+        }
+        config.push_str("\n# variables end\n");
 
         // import
         config.push_str("\n# import\n");
         for module in &self.modules {
             config.push_str(format!("source={}/theme.conf\n", module.path.display()).as_str());
-        }config.push_str("\n# import end\n");
+        }
+        config.push_str("\n# import end\n");
 
         config
     }
 
-    pub fn apply(&mut self) -> Result<(),String> {
+    pub fn apply(&mut self) -> Result<(), String> {
         // apply config
         let config = self.build();
 
@@ -167,7 +195,7 @@ impl Config {
         //     "swww",
         //     "waybar"
         // ];
-        
+
         // for process in to_kill.iter() {
         //     match std::process::Command::new("pkill").arg(process).output() {
         //         Ok(_) => (),
@@ -175,10 +203,8 @@ impl Config {
         //     }
         // }
 
-        match std::fs::write(&self.path, config){
-            Ok(_) => {
-                Ok(())
-            },
+        match std::fs::write(&self.path, config) {
+            Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to write to {}: {}", self.path.display(), e)),
         }
     }

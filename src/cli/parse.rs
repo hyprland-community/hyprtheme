@@ -7,10 +7,13 @@ use crate::util::theme::Theme;
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
 pub enum Hyprtheme {
-    Apply(Apply),
+    Init,
+    Enable(Enable),
+    Disable(Disable),
     List(List),
     Install(Install),
     Uninstall(Uninstall),
+    Update(Update),
     Uri(Uri),
 }
 
@@ -20,9 +23,19 @@ pub struct Uri {
 }
 
 #[derive(Parser)]
-pub struct Apply {
-    #[arg(value_parser=parse_theme)]
-    pub theme: Theme,
+pub struct Enable {
+    pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    pub config: PathBuf,
+}
+
+#[derive(Parser)]
+pub struct Disable {
+    pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    pub config: PathBuf,
 }
 
 #[derive(Parser)]
@@ -51,6 +64,14 @@ pub struct Uninstall {
     pub theme_dir: PathBuf,
 }
 
+#[derive(Parser)]
+pub struct Update {
+    pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
+}
+
 fn parse_path(path: &str) -> Result<PathBuf, String> {
     // expand ~
     let path = shellexpand::tilde(path);
@@ -61,8 +82,4 @@ fn parse_path(path: &str) -> Result<PathBuf, String> {
     } else {
         Err(format!("Path does not exist: {}", path.display()))
     }
-}
-
-fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    tokio::runtime::Runtime::new().unwrap().block_on(find_theme(theme_name,&PathBuf::new()))
 }

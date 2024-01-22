@@ -69,7 +69,7 @@ pub async fn find_theme(theme_name: &str, theme_dir: &PathBuf) -> Result<Theme, 
         Err(e) => return Err(e),
     };
     for theme in themes.themes {
-        if theme.name == theme_name {
+        if theme.name.to_lowercase() == theme_name.to_lowercase() {
             return Ok(theme);
         }
     }

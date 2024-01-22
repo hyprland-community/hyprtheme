@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=hyprtheme
+Exec=hyprtheme uri %u
+Type=Application
+Terminal=true
+MimeType=x-scheme-handler/hyprtheme

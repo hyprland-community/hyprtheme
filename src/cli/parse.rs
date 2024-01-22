@@ -1,108 +1,85 @@
 use std::path::PathBuf;
-
-use crate::{parser::theme::Theme, util};
 use clap::Parser;
+
+use crate::repo::find_theme;
+use crate::util::theme::Theme;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
 pub enum Hyprtheme {
-    Apply(Apply),
+    Init,
+    Enable(Enable),
+    Disable(Disable),
     List(List),
-    Repo(Repo),
-    Util(Util),
-    Init(Init),
-}
-
-#[derive(clap::Subcommand)]
-pub enum RepoSubcommand {
     Install(Install),
-    Remove(Remove),
-    List(List),
-}
-
-#[derive(clap::Subcommand)]
-pub enum UtilSubCommand {
-    Kill(Kill),
+    Uninstall(Uninstall),
+    Update(Update),
+    Uri(Uri),
 }
 
 #[derive(Parser)]
-pub struct Apply {
-    #[arg(value_parser=parse_theme)]
-    pub theme: Theme,
+pub struct Uri {
+    pub uri: String,
+}
+
+#[derive(Parser)]
+pub struct Enable {
+    pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    pub config: PathBuf,
+}
+
+#[derive(Parser)]
+pub struct Disable {
+    pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    pub config: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct List {
-    #[arg(long, short)]
-    pub deep: bool,
+
+    #[arg(short,long,default_value = "false")]
+    pub installed: bool,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct Install {
-    #[arg()]
     pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 #[derive(Parser)]
-pub struct Remove {
-    #[arg()]
+pub struct Uninstall {
     pub theme: String,
+
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
 #[derive(Parser)]
-pub struct Repo {
-    #[command(subcommand)]
-    pub subcommand: Option<RepoSubcommand>,
+pub struct Update {
+    pub theme: String,
 
-    #[arg()]
-    pub theme: Option<String>,
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub theme_dir: PathBuf,
 }
 
-#[derive(Parser)]
-pub struct Kill {
-    #[arg(short, long)]
-    pub bars: bool,
-
-    #[arg(short, long)]
-    pub wallpaper: bool,
-
-    #[arg(short, long, value_parser=parse_list)]
-    pub exclude_bar: Option<Vec<String>>,
-
-    #[arg(short, long, value_parser=parse_list)]
-    pub exclude_wallpaper: Option<Vec<String>>,
-}
-
-#[derive(Parser)]
-pub struct Util {
-    #[command(subcommand)]
-    pub subcommand: UtilSubCommand,
-}
-
-#[derive(Parser)]
-pub struct Init {
-    #[arg()]
-    pub path: Option<PathBuf>,
-}
-
-fn parse_theme(theme_name: &str) -> Result<Theme, String> {
-    let nest = theme_name.split(':').into_iter().collect::<Vec<&str>>();
-
-    match util::find_theme(nest[0]) {
-        Ok(theme_path) => {
-            let mut t = match Theme::from_file(theme_path) {
-                Ok(theme) => theme,
-                Err(e) => return Err(e),
-            };
-            if nest.len() > 1 {
-                t.default_subtheme = nest[1..].join(":");
-            }
-            Ok(t)
-        }
-        Err(e) => Err(e),
+fn parse_path(path: &str) -> Result<PathBuf, String> {
+    // expand ~
+    let path = shellexpand::tilde(path);
+    let path = path.as_ref();
+    let path = PathBuf::from(path);
+    if path.exists() {
+        Ok(path)
+    } else {
+        Err(format!("Path does not exist: {}", path.display()))
     }
-}
-
-fn parse_list(list: &str) -> Result<Vec<String>, String> {
-    Ok(list.split(',').into_iter().map(|s| s.to_string()).collect())
 }

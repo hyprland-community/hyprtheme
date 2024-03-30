@@ -20,6 +20,12 @@ additional themes can be installed from [hyprland-community/theme-repo](https://
 
 ## Install
 
+### Dependencies (Arch Linux)
+ - Rust
+```
+sudo pacman -S rust
+```
+
 > from git
 ```
 git clone https://github.com/hyprland-community/hyprtheme

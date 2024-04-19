@@ -22,25 +22,6 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn get_author(&self) -> String {
-        let mut split = self.repo.split('/').collect::<Vec<&str>>();
-        split.reverse();
-        split[1].to_string()
-    }
-
-    pub async fn fetch_preview(&self) -> Result<Vec<u8>, String> {
-        if self.images.len() == 0 {
-            return Err("No preview images found".to_string());
-        }
-        match reqwest::get(&self.images[0]).await {
-            Ok(res) => match res.bytes().await {
-                Ok(bytes) => Ok(bytes.to_vec()),
-                Err(e) => Err(e.to_string()),
-            },
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
     pub fn install(&self, install_dir: Option<PathBuf>) -> Result<(), String> {
         let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
 
@@ -137,6 +118,25 @@ impl Theme {
             Err(e) => Err(e.to_string()),
         }
     }
+
+    // pub fn get_author(&self) -> String {
+    //     let mut split = self.repo.split('/').collect::<Vec<&str>>();
+    //     split.reverse();
+    //     split[1].to_string()
+    // }
+
+    // pub async fn fetch_preview(&self) -> Result<Vec<u8>, String> {
+    //     if self.images.len() == 0 {
+    //         return Err("No preview images found".to_string());
+    //     }
+    //     match reqwest::get(&self.images[0]).await {
+    //         Ok(res) => match res.bytes().await {
+    //             Ok(bytes) => Ok(bytes.to_vec()),
+    //             Err(e) => Err(e.to_string()),
+    //         },
+    //         Err(e) => Err(e.to_string()),
+    //     }
+    // }
 }
 
 // display

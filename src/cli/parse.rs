@@ -1,9 +1,6 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use crate::repo::find_theme;
-use crate::util::theme::Theme;
-
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
 pub enum Hyprtheme {

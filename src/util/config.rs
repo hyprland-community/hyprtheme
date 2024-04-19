@@ -22,16 +22,16 @@ impl Module {
         }
     }
 
-    pub fn from_theme(theme: Theme) -> Module {
-        let path = expanduser("~/.config/hypr/themes/")
-            .unwrap()
-            .join(&theme.name.to_lowercase().replace(" ", "_"));
-        Module {
-            name: path.file_name().unwrap().to_str().unwrap().to_string(),
-            theme: Some(theme),
-            path,
-        }
-    }
+    // pub fn from_theme(theme: Theme) -> Module {
+    //     let path = expanduser("~/.config/hypr/themes/")
+    //         .unwrap()
+    //         .join(&theme.name.to_lowercase().replace(" ", "_"));
+    //     Module {
+    //         name: path.file_name().unwrap().to_str().unwrap().to_string(),
+    //         theme: Some(theme),
+    //         path,
+    //     }
+    // }
 }
 
 pub struct Config {
@@ -48,18 +48,18 @@ impl Config {
     }
 
     pub fn ensure_exists(&mut self) -> Result<(), String> {
-        if !self.path.exists() {
-            let parent = self.path.parent().unwrap();
-            if !parent.exists() {
-                std::fs::create_dir_all(parent).unwrap();
-            }
+        if self.path.exists() {
+            return Ok(());
+        }
 
-            match std::fs::write(&self.path, "") {
-                Ok(_) => Ok(()),
-                Err(e) => Err(format!("Failed to write to {}: {}", self.path.display(), e)),
-            }
-        } else {
-            Ok(())
+        let parent = self.path.parent().expect("Failed to get parent path.");
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+
+        match std::fs::write(&self.path, "") {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to write to {}: {}", self.path.display(), e)),
         }
     }
 

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
+use crate::util::ansi::{bold, green, reset};
 use serde::{Deserialize, Serialize};
-use crate::util::ansi::{green, reset, bold};
 
 use expanduser::expanduser;
 
@@ -18,7 +18,7 @@ pub struct Theme {
     pub config: String,
     pub desc: String,
     pub images: Vec<String>,
-    pub _installed: Option<bool>
+    pub _installed: Option<bool>,
 }
 
 impl Theme {
@@ -41,7 +41,7 @@ impl Theme {
         }
     }
 
-    pub fn install(&self, install_dir: Option<PathBuf>) -> Result<(), String>{
+    pub fn install(&self, install_dir: Option<PathBuf>) -> Result<(), String> {
         let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
 
         //standardize theme name
@@ -54,23 +54,32 @@ impl Theme {
             return Err(format!("Theme {} is already installed", &self.name));
         }
 
-        println!("Installing theme {} to {}\n", &self.name, theme_dir.to_str().unwrap());
+        println!(
+            "Installing theme {} to {}\n",
+            &self.name,
+            theme_dir.to_str().unwrap()
+        );
         // clone repo
-        let clone_cmd = format!("git clone --depth 1 --branch {} {} {}", &self.branch, &self.repo, theme_dir.to_str().unwrap());
-        
+        let clone_cmd = format!(
+            "git clone --depth 1 --branch {} {} {}",
+            &self.branch,
+            &self.repo,
+            theme_dir.to_str().unwrap()
+        );
+
         match std::process::Command::new("sh")
-        .arg("-c")
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
-        .arg(&clone_cmd)
-        .output() {
+            .arg("-c")
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .arg(&clone_cmd)
+            .output()
+        {
             Ok(_) => Ok(()),
             Err(e) => return Err(e.to_string()),
         }
-
     }
 
-    pub fn uninstall(&self, install_dir: Option<PathBuf>) -> Result<(),String> {
+    pub fn uninstall(&self, install_dir: Option<PathBuf>) -> Result<(), String> {
         let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
 
         //standardize theme name
@@ -83,8 +92,12 @@ impl Theme {
             return Err(format!("Theme {} is not installed", &self.name));
         }
 
-        println!("Uninstalling theme {} from {}", &self.name, theme_dir.to_str().unwrap());
-        
+        println!(
+            "Uninstalling theme {} from {}",
+            &self.name,
+            theme_dir.to_str().unwrap()
+        );
+
         // delete dir
         match std::fs::remove_dir_all(theme_dir) {
             Ok(_) => Ok(()),
@@ -92,7 +105,7 @@ impl Theme {
         }
     }
 
-    pub fn update(&self, install_dir: Option<PathBuf>) -> Result<(),String> {
+    pub fn update(&self, install_dir: Option<PathBuf>) -> Result<(), String> {
         let install_dir = install_dir.unwrap_or(expanduser("~/.config/hypr/themes").unwrap());
 
         //standardize theme name
@@ -105,16 +118,21 @@ impl Theme {
             return Err(format!("Theme {} is not installed", &self.name));
         }
 
-        println!("Updating theme {} in {}", &self.name, theme_dir.to_str().unwrap());
-        
+        println!(
+            "Updating theme {} in {}",
+            &self.name,
+            theme_dir.to_str().unwrap()
+        );
+
         // delete dir
         match std::process::Command::new("sh")
-        .arg("-c")
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
-        .current_dir(&theme_dir)
-        .arg("git pull")
-        .output() {
+            .arg("-c")
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .current_dir(&theme_dir)
+            .arg("git pull")
+            .output()
+        {
             Ok(_) => Ok(()),
             Err(e) => Err(e.to_string()),
         }
@@ -131,10 +149,13 @@ impl std::fmt::Display for Theme {
         write!(
             f,
             "{}{}{}{}",
-            reset(),match self._installed {
-                Some(true) => green(false)+&bold()+"● ",
+            reset(),
+            match self._installed {
+                Some(true) => green(false) + &bold() + "● ",
                 _ => String::from("○ "),
-            },self.name,reset()
+            },
+            self.name,
+            reset()
         )
     }
 }

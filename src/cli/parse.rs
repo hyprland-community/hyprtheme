@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use clap::Parser;
+use std::path::PathBuf;
 
 use crate::repo::find_theme;
 use crate::util::theme::Theme;
@@ -26,7 +26,7 @@ pub struct Uri {
 pub struct Enable {
     pub theme: String,
 
-    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    #[arg(short, long, default_value = "~/.config/hypr/themes/hyprtheme.conf")]
     pub config: PathBuf,
 }
 
@@ -34,14 +34,13 @@ pub struct Enable {
 pub struct Disable {
     pub theme: String,
 
-    #[arg(short,long,default_value="~/.config/hypr/themes/hyprtheme.conf")]
+    #[arg(short, long, default_value = "~/.config/hypr/themes/hyprtheme.conf")]
     pub config: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct List {
-
-    #[arg(short,long,default_value = "false")]
+    #[arg(short, long, default_value = "false")]
     pub installed: bool,
 
     #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]

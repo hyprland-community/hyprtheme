@@ -62,8 +62,6 @@ pub fn black(bg: bool) -> String {
     }
 }
 
-
-
 pub fn rgb(r: u8, g: u8, b: u8) -> String {
     format!("\x1b[38;2;{};{};{}m", r, g, b)
 }

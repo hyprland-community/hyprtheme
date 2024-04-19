@@ -1,11 +1,6 @@
-use std::path::{self, PathBuf};
+use std::path::PathBuf;
 
-use expanduser::expanduser;
-
-use super::{
-    repo,
-    theme::{self, Theme},
-};
+use super::theme::Theme;
 
 pub struct Module {
     pub name: String,

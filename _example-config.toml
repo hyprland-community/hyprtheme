@@ -1,0 +1,68 @@
+version = 0.2
+
+[theme]
+name    = "cyber"
+desc    = "A cyberpunk theme with neon glow"
+version = "1.0"
+author  = "BeardWarrior"
+git     = "https://github.com/taylor85345/neon-hyprland-theme"
+# Entry point of the hyprtheme Hyprland config file. By default `./hypr/hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
+entry = "./hypr/hyprtheme.confg"
+
+
+# Configure how to move dot files to their locations
+[dots]
+# The default is `~/.config` and will be used if not set.
+root = '~/.config'
+# Which dirs and files to ignore. Useful to ignore your own installer for example.
+# By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
+# You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
+ignore  = ['']
+include = ['']
+# Define how to move files from a to b.
+# Not sure how to do it in a nice way though
+# manual_moves = []
+
+
+[lifetime]
+# Gets run after the theme got installed. Usually to restart changed apps
+# Default path: .hyprtheme/setup.sh - If found it will run it, even if not specified
+setup = '.hyprtheme/up.sh'
+# Gets run after the theme got uninstalled. Usually to kill started apps
+# Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
+cleanup = '.hyprtheme/cleanup.sh'
+
+[[extra_config]]
+name = 'design'
+path = './hypr/design.conf'
+[[extra_config]]
+name = 'variables'
+path = './hypr/variables.conf'
+[[extra_config]]
+name = 'keybindings'
+path = './hypr/keybindings.conf'
+description = """Keybindings used by me.
+VIM style navigation of workspaces with Meta+( h,j,k,l ).
+Warning! This may conflict with your own."""
+[[extra_config]]
+name = 'workspaces'
+path = './hypr/workspaces.conf'
+description = """Open up apps on workspaces automatically.
+Music is on workspace 9. Browser: 2."""
+
+[misc]
+dependencies = [
+    "hyprland-git",
+    "eww",
+    "nerd-fonts-mononoki",
+    "nerd-fonts-jetbrains-mono",
+    "rofi-wayland",
+    "dunst",
+    "trayer",
+    "swww",
+    "macchina",
+    "socat",
+    "geticons",
+]
+
+# Thoughts

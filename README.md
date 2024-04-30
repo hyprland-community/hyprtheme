@@ -18,6 +18,13 @@ additional themes can be installed from [hyprland-community/theme-repo](https://
 ## Wiki
 ~~https://github.com/hyprland-community/theme-repo/wiki~~ may be outdated
 
+## Dependencies
+Arch:
+ - rust
+```
+sudo pacman -S rust
+```
+
 ## Install
 
 > from git

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
-pub enum Hyprtheme {
+pub enum CliCommands {
     Init,
     Enable(Enable),
     Disable(Disable),

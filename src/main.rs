@@ -1,13 +1,15 @@
+/// This file is named `theme_config.rs` as we might want to add
+/// a config file for Hyprtheme itself in the future
 use clap::Parser;
 
 mod cli;
 mod util;
 
 use util::ansi::{bold, red, reset};
-use util::config::{Config, Module};
 use util::repo;
+use util::theme::Theme;
 
-use cli::parse::Hyprtheme;
+use cli::commands::CliCommands;
 
 use expanduser::expanduser;
 
@@ -15,9 +17,9 @@ use std::{path::PathBuf, process::ExitCode};
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    match Hyprtheme::parse() {
-        Hyprtheme::Init => {
-            let mut config = Config::new();
+    match CliCommands::parse() {
+        CliCommands::Init => {
+            let mut config = Theme::new();
             config.path = expanduser("~/.config/hypr/themes/hyprtheme.conf").unwrap();
             config.ensure_exists().unwrap();
 
@@ -43,8 +45,8 @@ async fn main() -> ExitCode {
             println!("adding source line");
             std::fs::write(&hyprland_conf, format!("{}\n\n{}", source_line, content)).unwrap();
         }
-        Hyprtheme::Enable(enable) => {
-            let mut config = Config::from(
+        CliCommands::Enable(enable) => {
+            let mut config = Theme::from(
                 expanduser(enable.config.to_str().unwrap())
                     .unwrap()
                     .to_owned(),
@@ -68,8 +70,8 @@ async fn main() -> ExitCode {
                 }
             }
         }
-        Hyprtheme::Disable(disable) => {
-            let mut config = Config::from(
+        CliCommands::Disable(disable) => {
+            let mut config = Theme::from(
                 expanduser(disable.config.to_str().unwrap())
                     .unwrap()
                     .to_owned(),
@@ -100,7 +102,7 @@ async fn main() -> ExitCode {
                 }
             }
         }
-        Hyprtheme::List(list) => {
+        CliCommands::List(list) => {
             for theme in repo::fetch_themes(&list.theme_dir, None)
                 .await
                 .unwrap()
@@ -109,14 +111,14 @@ async fn main() -> ExitCode {
                 println!("{}", theme);
             }
         }
-        Hyprtheme::Install(install) => {
+        CliCommands::Install(install) => {
             return install_theme(install.theme, install.theme_dir).await
         }
-        Hyprtheme::Uninstall(uninstall) => {
+        CliCommands::Uninstall(uninstall) => {
             return uninstall_theme(uninstall.theme, uninstall.theme_dir).await
         }
-        Hyprtheme::Update(update) => return update_theme(update.theme, update.theme_dir).await,
-        Hyprtheme::Uri(uri) => match uri.uri.strip_prefix("hyprtheme://") {
+        CliCommands::Update(update) => return update_theme(update.theme, update.theme_dir).await,
+        CliCommands::Uri(uri) => match uri.uri.strip_prefix("hyprtheme://") {
             Some(uri) => {
                 let uri = uri.split('+').collect::<Vec<&str>>();
 

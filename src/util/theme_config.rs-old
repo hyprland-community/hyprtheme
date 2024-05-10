@@ -1,0 +1,77 @@
+use anyhow::{self, Context};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
+use toml::de::Error;
+
+pub struct ThemeConfig {
+    pub path: PathBuf,
+}
+
+impl ThemeConfig {
+    pub fn new() -> Self {
+        ThemeConfig {
+            path: PathBuf::new(),
+        }
+    }
+
+    pub fn ensure_exists(&mut self) -> Result<(), anyhow::Error> {
+        if self.path.exists() {
+            return Ok(());
+        }
+
+        let parent = self
+            .path
+            .parent()
+            .context("Failed to get parent path of the theme config.")?;
+        if !parent.exists() {
+            std::fs::create_dir_all(parent)?
+        }
+
+        std::fs::write(&self.path, "")
+            .with_context(|| format!("Failed to write config to {}", self.path.display()))
+    }
+
+    /// Read out the filepath and create a config object from it
+    // pub async fn from_file(path: &PathBuf) -> Result<Self, anyhow::Error> {
+    //     let file = std::fs::read_to_string(path)?;
+    //     let config: ThemeConfig = toml::from_str(&file)?;
+
+    //     config
+
+    //     // let mut config = ThemeConfig::new();
+    //     // config.path = path.to_owned();
+
+    //     // let parent_path = path.parent().unwrap();
+
+    //     // config.ensure_exists().unwrap();
+
+    //     // read file at path
+
+    //     // parse file
+    // }
+
+    // pub fn apply(&mut self) -> Result<(), String> {
+    // apply config
+    // let config = self.build();
+
+    // let to_kill = [
+    //     "eww",
+    //     "ags",
+    //     "swww",
+    //     "waybar"
+    // ];
+
+    // for process in to_kill.iter() {
+    //     match std::process::Command::new("pkill").arg(process).output() {
+    //         Ok(_) => (),
+    //         Err(e) => return Err(format!("Failed to kill {}: {}", process, e)),
+    //     }
+    // }
+
+    // match std::fs::write(&self.path, config) {
+    //     Ok(_) => Ok(()),
+    //     Err(e) => Err(format!("Failed to write to {}: {}", self.path.display(), e)),
+    // }
+    // }
+}

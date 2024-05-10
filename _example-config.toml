@@ -9,9 +9,11 @@ git     = "https://github.com/taylor85345/neon-hyprland-theme"
 # Entry point of the hyprtheme Hyprland config file. By default `./hypr/hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
 entry = "./hypr/hyprtheme.confg"
 
+# The hyprtheme.toml is always in the root of the repo
+# as this shows that the theme is hyprinstallable (?) and makes it easier to find.
 
 # Configure how to move dot files to their locations
-[dots]
+[files]
 # The default is `~/.config` and will be used if not set.
 root = '~/.config'
 # Which dirs and files to ignore. Useful to ignore your own installer for example.

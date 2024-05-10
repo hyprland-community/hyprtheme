@@ -5,7 +5,7 @@ use reqwest::Client;
 
 use crate::util::theme::{Theme, Themes};
 
-pub fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
+fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
     let dir = theme_dir.join(theme_name);
     if dir.exists() {
         return true;

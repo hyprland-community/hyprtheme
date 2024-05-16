@@ -183,7 +183,7 @@ impl Theme {
             // TODO: add ignore pattern. Ignore files .git, .hyprtheme, by default
             // Ignore patterns should also be able to ignore nested files/dirs, so let's see how to do that
             let mut ignore_glob = GlobSetBuilder::new();
-            for ignore_pattern in dots_config.ignore {
+            for ignore_pattern in &dots_config.ignore {
                 ignore_glob.add(Glob::new(&ignore_pattern).with_context(|| {
                     format!("Invalid ignore glob pattern: {}", &ignore_pattern)
                 })?);
@@ -191,7 +191,7 @@ impl Theme {
             let ignore_glob = ignore_glob.build()?;
 
             let mut include_glob = GlobSetBuilder::new();
-            for include_pattern in dots_config.include {
+            for include_pattern in &dots_config.include {
                 include_glob.add(Glob::new(&include_pattern).with_context(|| {
                     format!("Invalid include glob pattern: {}", &include_pattern)
                 })?);

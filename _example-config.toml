@@ -15,11 +15,10 @@ entry = "./hypr/hyprtheme.confg"
 # Configure how to move dot files to their locations
 [[dots]]
 # The directory to copy
-to_copy = '.config/'
-# Where to copy `root` to
-# TODO ? This is usually redundant, what would be a nice way to do that automatically?
-# Idea: If not set, append `~/` to `to_copy`
-destination = '~/.config/'
+from = '.config/'
+# Where to copy `from` to
+# If not set, it will be `~/` + `to_copy`
+to = '~/.config/'
 # Which dirs and files to ignore. Useful to ignore your own installer for example.
 # By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
 # They entry `hyprtheme.conf` is also always ignored, as the Hypr folder gets special treatment to work.

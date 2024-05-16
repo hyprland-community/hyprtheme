@@ -14,8 +14,6 @@ use super::{
     installed_theme::InstalledTheme,
 };
 
-// xTODO use the directories crate to figure out the correct path. The user might have changed it (its Linux after all) - nah, lets keep it simple mf
-
 #[derive(Deserialize, Debug)]
 pub struct Themes {
     pub themes: Vec<Theme>,
@@ -90,8 +88,10 @@ impl Theme {
 
         // Copy dots to .config
         // Copy hypr dot theme folder to ~/.config/hypr/hyprtheme
-        &self.copy_other_dots()?;
+        // TODO this
+        // &self.copy_other_dots()?;
 
+        // TODO this
         // Source hyprtheme.conf
         &self.setup_hypr_dots()?;
 
@@ -165,22 +165,20 @@ impl Theme {
         let dots_copy_configs = &self.config.dots;
 
         for dots_config in dots_copy_configs {
-            let destination_dir =
-                expanduser(dots_config.destination.clone().unwrap_or_else(|| {
-                    let mut to_path = dots_config.to_copy.clone().display().to_string();
-                    to_path.insert_str(0, "~/");
-                    to_path
-                }))
-                .with_context(|| {
-                    format!(
-                        "Failed to get install path for dot files in: {}",
-                        &dots_config.to_copy.display()
-                    )
-                })?;
+            let destination_dir = expanduser(dots_config.to.clone().unwrap_or_else(|| {
+                let mut to_path = dots_config.from.clone().display().to_string();
+                to_path.insert_str(0, "~/");
+                to_path
+            }))
+            .with_context(|| {
+                format!(
+                    "Failed to get install path for dot files in: {}",
+                    &dots_config.from.display()
+                )
+            })?;
 
-            let root_path = &self.path.join(&dots_config.to_copy);
+            let root_path = &self.path.join(&dots_config.from);
 
-            // TODO: add ignore pattern. Ignore files .git, .hyprtheme, by default
             // Ignore patterns should also be able to ignore nested files/dirs, so let's see how to do that
             let mut ignore_glob = GlobSetBuilder::new();
             for ignore_pattern in &dots_config.ignore {
@@ -203,8 +201,6 @@ impl Theme {
             for content in fs::read_dir(&root_path)? {
                 let from_path = content?.path();
 
-                // TODO: create a backup of deleted directories
-                //
                 if ignore_glob.is_match(&from_path) && !include_glob.is_match(&from_path) {
                     // File/dir is ignored and not included again, let's ignore it
                     continue;
@@ -372,30 +368,22 @@ struct ThemeMeta {
     branch: String,
 }
 
-impl ThemeMeta {
-    // TODO normalize the theme name during parsing (and reject weird special char names)
-    pub fn name(&self) -> String {
-        //standardize theme name
-        return self.name.to_lowercase().replace(" ", "_");
-    }
-}
-
 /// Configuration on how to move dot files to their locations
 #[derive(Debug, Deserialize)]
 struct DotsDirectoryConfig {
     /// What to copy relative from the root of the repository
-    to_copy: PathBuf,
+    from: PathBuf,
     /// The destination.
     ///
     /// If not specified it will be `to_copy` appended with `~/`.
-    destination: Option<String>,
+    to: Option<String>,
     /// Which dirs and files to ignore. Useful to ignore your own installer for example.
     /// By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
     /// You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
     ignore: Vec<String>,
     /// Regex strings
     include: Vec<String>,
-    // TODO: Manual moves
+    // TODO: How to do manual moves for edge cases
     // Define how to move files from a to b.
     // Not sure how to do it in a nice way though. Maybe a Hashmap? Record<from, to>
     //# manual_moves = []

@@ -593,6 +593,7 @@ dependencies = [
  "fs_extra",
  "git2",
  "indicatif",
+ "pathdiff",
  "regex",
  "reqwest",
  "serde",
@@ -600,6 +601,7 @@ dependencies = [
  "shellexpand",
  "tokio",
  "toml",
+ "url",
 ]
 
 [[package]]
@@ -884,6 +886,12 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
+
+[[package]]
+name = "pathdiff"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8835116a5c179084a830efb3adc117ab007512b535bc1a21c991d3b32a6b44dd"
 
 [[package]]
 name = "percent-encoding"

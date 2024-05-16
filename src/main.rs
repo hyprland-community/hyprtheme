@@ -1,19 +1,13 @@
 /// This file is named `theme_config.rs` as we might want to add
 /// a config file for Hyprtheme itself in the future
-use clap::Parser;
-
 mod cli;
-mod util;
-
-use util::ansi::{bold, red, reset};
-use util::repo;
-use util::theme::Theme;
-
+mod theme;
+use clap::Parser;
 use cli::commands::CliCommands;
-
 use expanduser::expanduser;
-
 use std::{path::PathBuf, process::ExitCode};
+use theme::repo;
+use theme::theme::Theme;
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -28,7 +22,7 @@ async fn main() -> ExitCode {
             let content = match std::fs::read_to_string(&hyprland_conf) {
                 Ok(content) => content,
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             };
@@ -58,14 +52,14 @@ async fn main() -> ExitCode {
             )) {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             };
             match config.apply() {
                 Ok(_) => println!("enabled"),
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             }
@@ -80,7 +74,7 @@ async fn main() -> ExitCode {
             match config.cleanup() {
                 Ok(_) => println!("cleanup done"),
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             }
@@ -90,14 +84,14 @@ async fn main() -> ExitCode {
             )) {
                 Ok(_) => {}
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             };
             match config.apply() {
                 Ok(_) => println!("disabled"),
                 Err(e) => {
-                    eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+                    eprintln!("{}", e);
                     return ExitCode::FAILURE;
                 }
             }
@@ -123,12 +117,7 @@ async fn main() -> ExitCode {
                 let uri = uri.split('+').collect::<Vec<&str>>();
 
                 if uri.len() < 2 {
-                    eprintln!(
-                        "{}{}{}",
-                        reset() + &red(false) + &bold(),
-                        "Invalid uri",
-                        reset()
-                    );
+                    eprintln!("{}", "Invalid uri",);
                     return ExitCode::FAILURE;
                 }
 
@@ -149,23 +138,13 @@ async fn main() -> ExitCode {
                         uninstall_theme(String::from(theme), theme_dir).await;
                     }
                     _ => {
-                        eprintln!(
-                            "{}{}{}",
-                            reset() + &red(false) + &bold(),
-                            "Invalid command",
-                            reset()
-                        );
+                        eprintln!("{}", "Invalid command",);
                         return ExitCode::FAILURE;
                     }
                 }
             }
             None => {
-                eprintln!(
-                    "{}{}{}",
-                    reset() + &red(false) + &bold(),
-                    "Invalid uri",
-                    reset()
-                );
+                eprintln!("{}", "Invalid uri",);
                 return ExitCode::FAILURE;
             }
         },
@@ -177,7 +156,7 @@ async fn install_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
     let theme = match repo::find_theme(&theme, &theme_dir).await {
         Ok(theme) => theme,
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     };
@@ -186,7 +165,7 @@ async fn install_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
     match theme.install(Some(theme_dir)) {
         Ok(_) => println!("\ninstalled"),
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     }
@@ -197,7 +176,7 @@ async fn uninstall_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
     let theme = match repo::find_theme(&theme, &theme_dir).await {
         Ok(theme) => theme,
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     };
@@ -206,7 +185,7 @@ async fn uninstall_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
     match theme.uninstall(Some(theme_dir)) {
         Ok(_) => println!("\nuninstalled"),
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     }
@@ -217,16 +196,16 @@ async fn update_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
     let theme = match repo::find_theme(&theme, &theme_dir).await {
         Ok(theme) => theme,
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     };
     println!("found {}", theme);
 
-    match theme.update(Some(theme_dir)) {
+    match theme.update() {
         Ok(_) => println!("\nupdated"),
         Err(e) => {
-            eprintln!("{}{}{}", reset() + &red(false) + &bold(), e, reset());
+            eprintln!("{}", e);
             return ExitCode::FAILURE;
         }
     }

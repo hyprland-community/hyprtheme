@@ -1,10 +1,10 @@
 version = 0.2
 
 [theme]
-name    = "cyber"
-desc    = "A cyberpunk theme with neon glow"
-version = "1.0"
-author  = "BeardWarrior"
+name    = "testing_plz"
+desc    = "Testing, 'Attention, please'"
+version = "0.1"
+author  = "VDawg"
 git     = "https://github.com/taylor85345/neon-hyprland-theme"
 # Entry point of the hyprtheme Hyprland config file. By default `./hypr/hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
 entry = "./hypr/hyprtheme.confg"
@@ -13,14 +13,20 @@ entry = "./hypr/hyprtheme.confg"
 # as this shows that the theme is hyprinstallable (?) and makes it easier to find.
 
 # Configure how to move dot files to their locations
-[files]
-# The default is `~/.config` and will be used if not set.
-root = '~/.config'
+[[dots]]
+# The directory to copy
+to_copy = '.config/'
+# Where to copy `root` to
+# TODO ? This is usually redundant, what would be a nice way to do that automatically?
+# Idea: If not set, append `~/` to `to_copy`
+destination = '~/.config/'
 # Which dirs and files to ignore. Useful to ignore your own installer for example.
 # By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
+# They entry `hyprtheme.conf` is also always ignored, as the Hypr folder gets special treatment to work.
 # You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
-ignore  = ['']
-include = ['']
+ignore = ['']
+# Include files which got ignored or are ignored by default
+include = []
 # Define how to move files from a to b.
 # Not sure how to do it in a nice way though
 # manual_moves = []
@@ -45,7 +51,7 @@ name = 'keybindings'
 path = './hypr/keybindings.conf'
 description = """Keybindings used by me.
 VIM style navigation of workspaces with Meta+( h,j,k,l ).
-Warning! This may conflict with your own."""
+Warning! These may conflict with your own."""
 [[extra_config]]
 name = 'workspaces'
 path = './hypr/workspaces.conf'
@@ -68,3 +74,4 @@ dependencies = [
 ]
 
 # Thoughts
+# - I am hungry

@@ -47,7 +47,8 @@ struct LifeTimeConfig {
     cleanup: String,
 }
 
-/// Data for an optional extra configuration file, like a workspaces setup
+/// Data for an optional extra configuration file
+/// Examples: ASUS Rog Keybinds, personal Workspaces setup
 #[derive(Debug, Deserialize)]
 struct ExtraConfig {
     name: String,

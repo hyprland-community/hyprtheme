@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Client;
 
-use crate::util::theme::{Theme, Themes};
+use super::theme::{Theme, Themes};
 
 fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
     let dir = theme_dir.join(theme_name);

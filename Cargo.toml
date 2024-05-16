@@ -20,3 +20,5 @@ shellexpand = "3.1.0"
 indicatif   = "0.17.7"
 anyhow      = "1.0.82"
 git2        = { version = "0.18.3", features = ["https"] }
+url         = "2.5.0"
+pathdiff = "0.2.1"

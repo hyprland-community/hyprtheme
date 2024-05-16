@@ -1,4 +1,4 @@
-use pathdiff::diff_paths;
+use globset::{Glob, GlobSetBuilder};
 use std::fs;
 use std::path::PathBuf;
 
@@ -98,14 +98,15 @@ impl Theme {
         //
         // TODO: Where to run setup.sh in data folder or hypr config folder?
         // Set installed theme data path in $PATH variable or smth, so that setup.sh knows where it can find theme data
-        let installed_theme = installed_theme::get(Some(&install_dir))?;
+        let installed_theme = installed_theme::get(Some(&install_dir))
+            .context("Failed to retrieve installed theme directly after installtion")?;
 
         // Run setup.sh, but from where?
 
         return match installed_theme {
             Some(theme) => Ok(theme),
             None => Err(anyhow!(format!(
-                "Failed to install theme. hyprtheme.conf could not be located in {}",
+                "Failed to install theme. hyprtheme.conf could not be located in {}. Plz open up an issue and we shall fix it!",
                 install_dir.display()
             ))),
         };
@@ -179,73 +180,70 @@ impl Theme {
 
             let root_path = &self.path.join(&dots_config.to_copy);
 
+            // TODO: add ignore pattern. Ignore files .git, .hyprtheme, by default
+            // Ignore patterns should also be able to ignore nested files/dirs, so let's see how to do that
+            let mut ignore_glob = GlobSetBuilder::new();
+            for ignore_pattern in dots_config.ignore {
+                ignore_glob.add(Glob::new(&ignore_pattern).with_context(|| {
+                    format!("Invalid ignore glob pattern: {}", &ignore_pattern)
+                })?);
+            }
+            let ignore_glob = ignore_glob.build()?;
+
+            let mut include_glob = GlobSetBuilder::new();
+            for include_pattern in dots_config.include {
+                include_glob.add(Glob::new(&include_pattern).with_context(|| {
+                    format!("Invalid include glob pattern: {}", &include_pattern)
+                })?);
+            }
+            let include_glob = include_glob.build()?;
+
             // Get top level folders of to_copy
             let mut from_to_paths: Vec<(PathBuf, PathBuf)> = Vec::new();
             for content in fs::read_dir(&root_path)? {
                 let from_path = content?.path();
+
+                // TODO: create a backup of deleted directories
+                //
+                if ignore_glob.is_match(&from_path) && !include_glob.is_match(&from_path) {
+                    // File/dir is ignored and not included again, let's ignore it
+                    continue;
+                }
+
                 let to_path = destination_dir.join(from_path.strip_prefix(&root_path)?);
 
                 from_to_paths.push((from_path, to_path));
             }
-
-            // TODO: add ignore pattern. Ignore files .git, .hyprtheme, by default
-            // Ignore patterns should also be able to ignore nested files/dirs, so let's see how to do that
-
 
             // TODO: Backup existing files
             //      - Check if hyprtheme-theme is installed. If yes, skip,
             //        as we would overwrite the backup with a theme
             //      - If no, save theme into <data>/backup/<date>/
 
-
-            // Delete the files/dirs which would get overwritten
             for (from, to) in from_to_paths {
+                // Delete the file/dir which would get overwritten
                 if to.is_file() {
                     fs::remove_file(&to)?;
                 } else if to.is_dir() {
                     fs::remove_dir_all(&to)?;
                 } else {
                     return Err(anyhow!(format!(
-                        "Provided path is not a file or dir??? {}",
+                        "Provided path is not a file nor dir??? {}",
                         &to.display()
                     )))?;
                 }
+
+                // Copy it over
+                fs::copy(from, &to)?;
             }
-
-            // let copy_options = fs_extra::dir::CopyOptions {
-            //     overwrite: true,
-            //     content_only: false,
-            //     buffer_size: 420,
-            //     copy_inside: false,
-            //     skip_exist: false,
-            //     depth: 0,
-            // };
-            // fs_extra::copy_items(&from, &to, &copy_options)?;
-
-            println!(
-                "{}",
-                from_to_paths
-                    .into_iter()
-                    .map(|p| p.display().to_string())
-                    .collect::<Vec<String>>()
-                    .join("\n")
-            )
         }
 
-        Ok(())
-
-        // Let's just move the files from to_copy path to destination
-
-        // TODO create a backup of deleted directories
-
-        //
-        //
-        //
-        // Source user-selected extra configs
+        // TODO: Prompt and install extra configs
 
         // Create variables.conf if it does not exists yet in the hypr user dir
         // Append it after the Hyprtheme config, but before the rest
-        //
+
+        Ok(())
     }
 
     // async fn copy_other_dots(&self) -> Result<()> {}

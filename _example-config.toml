@@ -39,12 +39,7 @@ setup = '.hyprtheme/up.sh'
 # Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
 cleanup = '.hyprtheme/cleanup.sh'
 
-[[extra_config]]
-name = 'design'
-path = './hypr/design.conf'
-[[extra_config]]
-name = 'variables'
-path = './hypr/variables.conf'
+# Configs which can be optionally installed
 [[extra_config]]
 name = 'keybindings'
 path = './hypr/keybindings.conf'

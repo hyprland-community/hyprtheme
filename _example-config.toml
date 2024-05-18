@@ -1,0 +1,71 @@
+version = 0.2
+
+[theme]
+name    = "testing_plz"
+desc    = "Testing, 'Attention, please'"
+version = "0.1"
+author  = "VDawg"
+git     = "https://github.com/taylor85345/neon-hyprland-theme"
+# Entry point of the hyprtheme Hyprland config file. By default `./hypr/hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
+entry = "./hypr/hyprtheme.confg"
+
+# The hyprtheme.toml is always in the root of the repo
+# as this shows that the theme is hyprinstallable (?) and makes it easier to find.
+
+# Configure how to move dot files to their locations
+[[dots]]
+# The directory to copy
+from = '.config/'
+# Where to copy `from` to
+# If not set, it will be `~/` + `to_copy`
+to = '~/.config/'
+# Which dirs and files to ignore. Useful to ignore your own installer for example.
+# By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
+# They entry `hyprtheme.conf` is also always ignored, as the Hypr folder gets special treatment to work.
+# You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
+ignore = ['']
+# Include files which got ignored or are ignored by default
+include = []
+# Define how to move files from a to b.
+# Not sure how to do it in a nice way though
+# manual_moves = []
+
+
+[lifetime]
+# Gets run after the theme got installed. Usually to restart changed apps
+# Default path: .hyprtheme/setup.sh - If found it will run it, even if not specified
+setup = '.hyprtheme/up.sh'
+# Gets run after the theme got uninstalled. Usually to kill started apps
+# Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
+cleanup = '.hyprtheme/cleanup.sh'
+
+# Configs which can be optionally installed
+[[extra_config]]
+name = 'keybindings'
+path = './hypr/keybindings.conf'
+description = """Keybindings used by me.
+VIM style navigation of workspaces with Meta+( h,j,k,l ).
+Warning! These may conflict with your own."""
+[[extra_config]]
+name = 'workspaces'
+path = './hypr/workspaces.conf'
+description = """Open up apps on workspaces automatically.
+Music is on workspace 9. Browser: 2."""
+
+[misc]
+dependencies = [
+    "hyprland-git",
+    "eww",
+    "nerd-fonts-mononoki",
+    "nerd-fonts-jetbrains-mono",
+    "rofi-wayland",
+    "dunst",
+    "trayer",
+    "swww",
+    "macchina",
+    "socat",
+    "geticons",
+]
+
+# Thoughts
+# - I am hungry

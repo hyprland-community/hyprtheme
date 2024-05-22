@@ -1,6 +1,7 @@
 /// This file is named `theme_config.rs` as we might want to add
 /// a config file for Hyprtheme itself in the future
 mod cli;
+mod consts;
 mod theme;
 use clap::Parser;
 use cli::commands::CliCommands;

@@ -6,8 +6,19 @@ desc    = "Testing, 'Attention, please'"
 version = "0.1"
 author  = "VDawg"
 git     = "https://github.com/taylor85345/neon-hyprland-theme"
-# Entry point of the hyprtheme Hyprland config file. By default `./hypr/hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
-entry = "./hypr/hyprtheme.confg"
+
+[hypr]
+# The `hypr` config directory in the theme. 
+# Has to contain the `hyprtheme.config` file, which gets used as an entry file for the theme configs.
+location = ".config/hypr/"
+# To is not nessecary, as it will be installed in the instal path,
+# which is either the default, the config option (future), or the CLI arg
+
+
+# Either a tagged release, or Git
+# TODO: implement this version check
+min_version = "0.4.0"
+
 
 # The hyprtheme.toml is always in the root of the repo
 # as this shows that the theme is hyprinstallable (?) and makes it easier to find.

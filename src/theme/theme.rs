@@ -1,6 +1,9 @@
 use globset::{Glob, GlobSetBuilder};
-use std::fs;
+use pathdiff::diff_paths;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::PathBuf;
+use walkdir::WalkDir;
 
 use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
@@ -8,11 +11,9 @@ use serde::Deserialize;
 use expanduser::expanduser;
 use url::Url;
 
-use super::{
-    consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_INSTALL_PATH},
-    installed_theme,
-    installed_theme::InstalledTheme,
-};
+use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_INSTALL_PATH};
+
+use super::{installed_theme, installed_theme::InstalledTheme};
 
 #[derive(Deserialize, Debug)]
 pub struct Themes {
@@ -26,6 +27,7 @@ pub struct Themes {
 struct ParsedThemeConfig {
     meta: ThemeMeta,
     version: String,
+    hypr: HyprConfig,
     dots: Vec<DotsDirectoryConfig>,
     lifetime: LifeTimeConfig,
     extra_configs: Vec<ExtraConfig>,
@@ -57,11 +59,12 @@ pub struct Theme {
 impl Theme {
     /// Has an optional install_directory argument, as Hyprland allows for custom config paths
     /// Returns the install directory path
-    pub fn install(&self, install_directory: Option<PathBuf>) -> Result<InstalledTheme> {
+    pub async fn install(&self, install_dir: Option<PathBuf>) -> Result<InstalledTheme> {
         let meta = &self.config.meta;
 
+        // TODO use default value for theme config instead of option, to simplify this
         let install_dir =
-            install_directory.unwrap_or(expanduser(&DEFAULT_INSTALL_PATH).context(format!(
+            install_dir.unwrap_or(expanduser(&DEFAULT_INSTALL_PATH).context(format!(
                 "Failed to expand home directory for the default install path: {}",
                 DEFAULT_INSTALL_PATH
             ))?);
@@ -86,22 +89,13 @@ impl Theme {
         // TODO: What to do when the install process fails mid-install?
         // Revert back? Leave it? Crash the OS?
 
-        // Copy dots to .config
-        // Copy hypr dot theme folder to ~/.config/hypr/hyprtheme
-        // TODO this
-        // &self.copy_other_dots()?;
-
-        // TODO this
-        // Source hyprtheme.conf
-        &self.setup_hypr_dots()?;
+        &self.setup_dots(&install_dir).await?;
 
         //
         // TODO: Where to run setup.sh in data folder or hypr config folder?
         // Set installed theme data path in $PATH variable or smth, so that setup.sh knows where it can find theme data
         let installed_theme = installed_theme::get(Some(&install_dir))
             .context("Failed to retrieve installed theme directly after installtion")?;
-
-        // Run setup.sh, but from where?
 
         return match installed_theme {
             Some(theme) => Ok(theme),
@@ -151,20 +145,75 @@ impl Theme {
         Theme::from_directory(&clone_path).await
     }
 
-    async fn setup_dots(&self) -> Result<()> {
+    /// hypr_config_dir is the absolute path
+    async fn setup_dots(&self, install_dir: &PathBuf) -> Result<()> {
         // First lets copy the regular dots
         // 1. Get all the files
         //  1.1 Get them by the specified root in the hyprtheme.toml
         //  1.2 Copy them over recursivley matching the path
-        //      ? What to do about existing dirs? Should they get deleted first? Probably?
-        //      ? But which should get deleted? .config? Nope. ~/.config/rofi? Yes. Delete after root (.config)?
-        //      ? But what about ~/.config/rofi/scripts?
-        //      ? And ~/.local/share/<app>/scripts? (root: .local) `share` cannot be deleted
+        // TODO 2. Install extra configs
+        // TODO 3. Add the variables config
 
-        // Copy over the dot files
-        let dots_copy_configs = &self.config.dots;
+        self.copy_general_dots();
+        self.setup_hyprtheme_hypr_dots(&install_dir);
 
-        for dots_config in dots_copy_configs {
+        // TODO: Prompt and install extra configs
+
+        // TODO: Variables
+        // Create variables.conf if it does not exists yet in the hypr user dir
+        // Append it after the Hyprtheme config, but before the rest
+
+        Ok(())
+    }
+
+    /// Move the hypr config dir into `~/.config/hypr/hyprtheme`
+    /// And then source it
+    fn setup_hyprtheme_hypr_dots(&self, install_dir: &PathBuf) -> Result<()> {
+        fs::copy(
+            &self.path.join(&self.config.hypr.from),
+            &install_dir.join("hypr/hyprtheme/"),
+        )
+        .context("Failed to copy over hypr config directory")?;
+        // Calculate theme source string, like `source=~/.config/hypr/settings.conf`
+        // TODO: replace absolute source path with ~ if possible
+        // makes config more portable
+
+        // TODO: how to handle custom hypr config locations and different install paths
+        let hyprtheme_config_path = &install_dir.join("hypr/hyprtheme.conf");
+
+        let hyprtheme_source_str = "source=".to_string()
+            + &install_dir
+                .join("hypr/hyprtheme/hyprtheme.conf")
+                .to_string_lossy();
+        // Read out hyprland.conf via std::fs::read_to_string("list.txt").unwrap();
+        // Check if hyprtheme.conf is sourced in hyprland.conf, if not, source it
+        let is_already_sourced = std::fs::read_to_string(&hyprtheme_config_path)
+            .context("Failed to read out main hyprtheme.conf")?
+            .contains(&hyprtheme_source_str);
+
+        if !is_already_sourced {
+            // Append the source line
+            // TODO should be sourced after variables sourcing
+            let mut config_file = OpenOptions::new()
+                .write(true)
+                .append(true)
+                .open(&hyprtheme_config_path)?;
+
+            config_file.write_all(&hyprtheme_source_str.as_bytes())?;
+        }
+
+        Ok(())
+
+        // TODO remove outdated sourced config (install path changed after install / user used dots from someone who used hyprtheme and uses hyprtheme too)
+    }
+
+    /// Copy over the dot files, as specified in the theme toml.
+    ///
+    /// Deletes directories/files which would get overwritten to prevent clutter
+    ///
+    /// Not the hypr dots, as they need special treatment
+    fn copy_general_dots(&self) -> Result<()> {
+        for dots_config in &self.config.dots {
             let destination_dir = expanduser(dots_config.to.clone().unwrap_or_else(|| {
                 let mut to_path = dots_config.from.clone().display().to_string();
                 to_path.insert_str(0, "~/");
@@ -177,9 +226,8 @@ impl Theme {
                 )
             })?;
 
-            let root_path = &self.path.join(&dots_config.from);
+            let root_dots_path = &self.path.join(&dots_config.from);
 
-            // Ignore patterns should also be able to ignore nested files/dirs, so let's see how to do that
             let mut ignore_glob = GlobSetBuilder::new();
             for ignore_pattern in &dots_config.ignore {
                 ignore_glob.add(Glob::new(&ignore_pattern).with_context(|| {
@@ -196,17 +244,43 @@ impl Theme {
             }
             let include_glob = include_glob.build()?;
 
-            // Get top level folders of to_copy
+            // Get top level folders of to_copy to determine what gets deleted/backed up
+            let mut top_level_paths: Vec<(PathBuf, PathBuf)> = Vec::new();
+            // Filtered by the globs
             let mut from_to_paths: Vec<(PathBuf, PathBuf)> = Vec::new();
-            for content in fs::read_dir(&root_path)? {
-                let from_path = content?.path();
+            for (index, entry) in WalkDir::new(&root_dots_path)
+                .min_depth(1)
+                .into_iter()
+                .enumerate()
+            {
+                let from_path = entry?.path().to_path_buf();
+                let from_path_relative = diff_paths(&from_path, &self.path).expect(
+                    format!(
+                        "Failed to find relative path for dot file:\n{}\n{}",
+                        &from_path.display(),
+                        &self.path.display()
+                    )
+                    .as_str(),
+                );
 
-                if ignore_glob.is_match(&from_path) && !include_glob.is_match(&from_path) {
-                    // File/dir is ignored and not included again, let's ignore it
+                // Ignore `hypr_directory` files, as they get treated differently
+                if from_path_relative.starts_with(&self.config.hypr.from) {
                     continue;
                 }
 
-                let to_path = destination_dir.join(from_path.strip_prefix(&root_path)?);
+                // File/dir is ignored and not included again, let's ignore it
+                if ignore_glob.is_match(&from_path_relative)
+                    && !include_glob.is_match(&from_path_relative)
+                {
+                    continue;
+                }
+
+                let to_path = destination_dir.join(from_path.strip_prefix(&root_dots_path)?);
+
+                // The first iteration contains the top level dirs/files
+                if index == 0 {
+                    top_level_paths.push((from_path.clone(), to_path.clone()));
+                }
 
                 from_to_paths.push((from_path, to_path));
             }
@@ -216,7 +290,7 @@ impl Theme {
             //        as we would overwrite the backup with a theme
             //      - If no, save theme into <data>/backup/<date>/
 
-            for (from, to) in from_to_paths {
+            for (from, to) in top_level_paths {
                 // Delete the file/dir which would get overwritten
                 if to.is_file() {
                     fs::remove_file(&to)?;
@@ -233,12 +307,6 @@ impl Theme {
                 fs::copy(from, &to)?;
             }
         }
-
-        // TODO: Prompt and install extra configs
-
-        // Create variables.conf if it does not exists yet in the hypr user dir
-        // Append it after the Hyprtheme config, but before the rest
-
         Ok(())
     }
 
@@ -254,7 +322,9 @@ impl Theme {
     /// Like this a themes can be loaded into memory, queried
     async fn from_directory(path: &PathBuf) -> Result<Self, anyhow::Error> {
         // The default locations of the hyprtheme.toml config
-        let locations = vec!["./hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
+        let locations = vec!["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
+
+        // TODO check that hyprtheme.conf exists in the Hyprland config dir of this this theme
 
         // Lets keep the errors by not using a find_map in case there are others reasons why the config cannot get accessed
         let config_string = locations
@@ -362,10 +432,17 @@ struct ThemeMeta {
     git: String,
     /// Entry point of the hyprtheme Hyprland config file.
     ///
-    /// By default `./hyprtheme.config` or `./.hyprtheme/hyprtheme.config`
-    entry: PathBuf,
+    /// The path to the Hyprland config directory
+    hypr_directory: PathBuf,
     /// Git Branch of the theme repository
     branch: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct HyprConfig {
+    from: PathBuf,
+    to: PathBuf,
+    min_version: String,
 }
 
 /// Configuration on how to move dot files to their locations
@@ -375,15 +452,17 @@ struct DotsDirectoryConfig {
     from: PathBuf,
     /// The destination.
     ///
-    /// If not specified it will be `to_copy` appended with `~/`.
+    /// If not specified it will be `to_copy` appended with `~/`
     to: Option<String>,
+    // TODO: Parse this as Vec<Glob> and err if they are not valid globs
     /// Which dirs and files to ignore. Useful to ignore your own installer for example.
     /// By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
     /// You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
     ignore: Vec<String>,
+    // TODO: Parse this as Vec<Glob> and err if they are not valid globs
     /// Regex strings
     include: Vec<String>,
-    // TODO: How to do manual moves for edge cases
+    // TODO: How to do manual moves A->B for edge cases. And are they really nessecary
     // Define how to move files from a to b.
     // Not sure how to do it in a nice way though. Maybe a Hashmap? Record<from, to>
     //# manual_moves = []

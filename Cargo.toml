@@ -22,3 +22,5 @@ anyhow      = "1.0.82"
 git2        = { version = "0.18.3", features = ["https"] }
 url         = "2.5.0"
 globset     = "0.4.14"
+walkdir = "2.5.0"
+pathdiff = "0.2.1"

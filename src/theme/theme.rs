@@ -35,6 +35,7 @@ struct ParsedThemeConfig {
 }
 
 /// A theme in the data directory.
+/// ! Has to be created
 /// Can be installed, updated, etc
 ///
 /// That is _*NOT*_ an already installed theme. For that see the InstalledTheme struct
@@ -109,7 +110,7 @@ impl Theme {
     /// Download the theme repo into the data dir and parse it
     ///
     /// Not public, because the user only uses the install method
-    async fn download(git_url: &String, branch: &String) -> Result<Self> {
+    pub async fn download(git_url: &String, branch: &String) -> Result<Self> {
         // We need to first download the repo, before we can parse its config
         let url = Url::parse(&git_url).context("Invalid URL passed")?;
         let dir_name = url
@@ -440,8 +441,9 @@ struct ThemeMeta {
 
 #[derive(Debug, Deserialize)]
 struct HyprConfig {
+    /// Relative path to the Hyprland config directory in the theme repository
     from: PathBuf,
-    to: PathBuf,
+    /// Minimum required Hyprland version. Either a semver-string for a tagged release or 'git' for the latest git version.
     min_version: String,
 }
 

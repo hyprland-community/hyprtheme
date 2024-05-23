@@ -1,11 +1,12 @@
 use std::{path::PathBuf, time::Duration};
 
+use anyhow::{anyhow, Result};
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::Client;
 
 use super::theme::{Theme, Themes};
 
-fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
+fn is_theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
     let dir = theme_dir.join(theme_name);
     if dir.exists() {
         return true;
@@ -19,7 +20,9 @@ fn theme_installed(theme_name: &str, theme_dir: &PathBuf) -> bool {
     return false;
 }
 
-pub async fn fetch_themes(theme_dir: &PathBuf, file_url: Option<&str>) -> Result<Themes, String> {
+pub async fn fetch_themes(theme_dir: &PathBuf, file_url: Option<&str>) -> Result<Themes> {
+    // TODO update this with the new Themes struct
+
     // fetch with progressbar
     let client = Client::new();
     let url = file_url.unwrap_or(
@@ -44,7 +47,7 @@ pub async fn fetch_themes(theme_dir: &PathBuf, file_url: Option<&str>) -> Result
             Ok(text) => match serde_json::from_str::<Themes>(&text) {
                 Ok(mut themes) => {
                     for theme in &mut themes.themes {
-                        theme._installed = Some(theme_installed(&theme.name, &theme_dir));
+                        theme._installed = Some(is_theme_installed(&theme.name, &theme_dir));
                     }
                     progress_bar
                         .finish_with_message(format!("Fetched {} themes", &themes.themes.len()));
@@ -57,14 +60,14 @@ pub async fn fetch_themes(theme_dir: &PathBuf, file_url: Option<&str>) -> Result
                 return Err(e.to_string());
             }
         },
-        Err(e) => {
+        Err(error) => {
             progress_bar.finish_with_message("Failed to fetch themes");
-            return Err(e.to_string());
+            return Err(anyhow::Error::from(error));
         }
     }
 }
 
-pub async fn find_theme(theme_name: &str, theme_dir: &PathBuf) -> Result<Theme, String> {
+pub async fn find_theme(theme_name: &str, theme_dir: &PathBuf) -> Result<Theme> {
     let themes = match fetch_themes(theme_dir, None).await {
         Ok(themes) => themes,
         Err(e) => return Err(e),
@@ -74,5 +77,5 @@ pub async fn find_theme(theme_name: &str, theme_dir: &PathBuf) -> Result<Theme, 
             return Ok(theme);
         }
     }
-    Err("Theme not found".to_string())
+    Err(anyhow!("Theme not found".to_string()))
 }

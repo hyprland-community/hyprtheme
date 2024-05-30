@@ -1,3 +1,3 @@
-pub mod installed_theme;
-pub mod repo;
-pub mod theme;
+pub mod installed;
+pub mod online;
+pub mod saved;

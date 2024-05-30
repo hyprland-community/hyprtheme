@@ -1,16 +1,17 @@
 /// This file is named `theme_config.rs` as we might want to add
 /// a config file for Hyprtheme itself in the future
 mod cli;
+use crate::cli::commands::ThemeInstallName;
 mod consts;
 mod theme;
 use clap::Parser;
 use cli::commands::CliCommands;
 use expanduser::expanduser;
 use std::{path::PathBuf, process::ExitCode};
-use theme::installed_theme::InstalledTheme;
-use theme::repo;
-use theme::theme::Theme;
-use theme::{installed_theme, theme};
+use theme::installed::InstalledTheme;
+use theme::online;
+use theme::saved::SavedTheme;
+use theme::{installed, saved};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -34,13 +35,33 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Install(arguments) => {
+            // Get the clone string
+            let git_url: String = match arguments.name {
+                ThemeInstallName::Featured(theme) => online::get_theme(&theme, &arguments.data_dir)
+                    .await
+                    .expect("Could not find provided theme."),
+                ThemeInstallName::Git((author, repo)) => {
+                    "git@github.com:".to_string() + &author + "/" + &repo + ".git"
+                }
+                ThemeInstallName::Github(github_string) => github_string,
+            };
+
+            // TODO what to do if the theme is already installed?
+            // It is kinda hard to figure out the name of the theme by the arguments,
+            // as the repo might not have the same name, and how would we enforce that
+            theme::saved::SavedTheme::download(
+                &git_url,
+                arguments.branch.as_ref(),
+                Some(&arguments.data_dir),
+            );
+
             // TODO: I kinda missed the download->install thing in theme::install uhmm..
             // If already saved, install it
             // Otherwise download and then install it
         }
 
         CliCommands::Uninstall(arguments) => {
-            installed_theme::get(Some(&arguments.config_dir))
+            installed::get(Some(&arguments.config_dir))
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
                 .uninstall()
@@ -48,7 +69,7 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Update(arguments) => {
-            installed_theme::get(Some(&arguments.theme_dir))
+            installed::get(Some(&arguments.theme_dir))
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
                 .update()

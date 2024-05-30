@@ -1,6 +1,9 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use std::path::PathBuf;
+use regex::{Regex, RegexBuilder};
+use std::{clone, path::PathBuf};
+
+use crate::theme::saved::SavedTheme;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -66,10 +69,63 @@ pub struct List {
 
 #[derive(Parser)]
 pub struct Install {
-    pub theme: String,
+    /// Either:
+    /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
+    /// - Git repository: git@github.com:hyprland-community/hyprtheme.git
+    /// - For Github: author/repo-name
+    #[arg(short,long,value_parser=ThemeInstallName::parse)]
+    pub name: ThemeInstallName,
 
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
-    pub theme_dir: PathBuf,
+    /// The branch of the repository to install
+    #[arg(short, long)]
+    pub branch: Option<String>,
+
+    /// The data directory of Hyprtheme by default "~/.local/share/hyprtheme/"
+    /// The theme will be saved in the sub-directory "themes"
+    #[arg(short,long,default_value="~/.local/share/hyprtheme/",value_parser=parse_path)]
+    pub data_dir: PathBuf,
+}
+
+#[derive(Clone)]
+pub enum ThemeInstallName {
+    /// Name of a theme featured on the Hyprtheme website
+    Featured(String),
+    /// Repository of a theme, like: git@github.com:hyprland-community/hyprtheme.git
+    Git((String, String)),
+    /// Short version of a Github repository:
+    /// author/repo-name
+    Github(String),
+}
+impl ThemeInstallName {
+    pub fn parse(string: &str) -> Result<Self> {
+        let github_regex = RegexBuilder::new(
+            r"^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}\/[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$",
+        )
+        .case_insensitive(true)
+        .build()
+        .unwrap();
+
+        if github_regex.is_match(string) {
+            return Ok(Self::Featured(string.to_owned()));
+        }
+
+        let git_repo_regex = RegexBuilder::new(
+            r"^((git|ssh|http(s)?)|(git@[\w\.-]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?$",
+        )
+        .case_insensitive(true)
+        .build()
+        .unwrap();
+        if git_repo_regex.is_match(string) {
+            let (name, repo) = string
+                .split_once("/")
+                .expect("Github repo regex failed. Could not split at /");
+            return Ok(Self::Git((name.to_owned(), repo.to_owned())));
+        }
+
+        Err(anyhow!(
+            "Provided theme argument is not a valid git repository, nor featured theme name."
+        ))
+    }
 }
 
 #[derive(Parser)]

@@ -13,11 +13,20 @@ use url::Url;
 
 use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_INSTALL_PATH};
 
-use super::{installed_theme, installed_theme::InstalledTheme};
+use super::{installed, installed::InstalledTheme};
 
+/// A theme in the data directory, thus saved to the disc.
+/// ! Has to be created
+/// Can be installed, updated, etc
+///
+/// That is _*NOT*_ an already installed theme. For that see the InstalledTheme struct
 #[derive(Deserialize, Debug)]
-pub struct Themes {
-    pub themes: Vec<Theme>,
+pub struct SavedTheme {
+    /// The path to the theme in the data directory
+    path: PathBuf,
+
+    /// Parsed theme config
+    config: ParsedThemeConfig,
 }
 
 /// Parsed theme config, does not have computed properties yet
@@ -34,19 +43,6 @@ struct ParsedThemeConfig {
     dependencies: Vec<String>,
 }
 
-/// A theme in the data directory.
-/// ! Has to be created
-/// Can be installed, updated, etc
-///
-/// That is _*NOT*_ an already installed theme. For that see the InstalledTheme struct
-#[derive(Deserialize, Debug)]
-pub struct Theme {
-    /// The path to the theme in the data directory
-    path: PathBuf,
-
-    // Parsed theme config
-    config: ParsedThemeConfig,
-}
 // Maybe I have `Theme` and `ThemeDir`.
 // I clone the repo and the installation is just adding the files to ./hypr and sourcing them
 // Why do I even need a `install` method here?
@@ -57,18 +53,19 @@ pub struct Theme {
 // Ez, just look up what is installed, create the corresponding Theme struct, exec the update method,
 // and then install method
 
-impl Theme {
+impl SavedTheme {
     /// Has an optional install_directory argument, as Hyprland allows for custom config paths
     /// Returns the install directory path
-    pub async fn install(&self, install_dir: Option<PathBuf>) -> Result<InstalledTheme> {
+    pub async fn install(&self, install_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
         let meta = &self.config.meta;
 
         // TODO use default value for theme config instead of option, to simplify this
-        let install_dir =
-            install_dir.unwrap_or(expanduser(&DEFAULT_INSTALL_PATH).context(format!(
+        let install_dir = install_dir
+            .unwrap_or(&expanduser(&DEFAULT_INSTALL_PATH).context(format!(
                 "Failed to expand home directory for the default install path: {}",
                 DEFAULT_INSTALL_PATH
-            ))?);
+            ))?)
+            .to_path_buf();
 
         let theme_dir_binding = &install_dir.join(&meta.name);
         let theme_dir = match theme_dir_binding.to_str() {
@@ -95,7 +92,7 @@ impl Theme {
         //
         // TODO: Where to run setup.sh in data folder or hypr config folder?
         // Set installed theme data path in $PATH variable or smth, so that setup.sh knows where it can find theme data
-        let installed_theme = installed_theme::get(Some(&install_dir))
+        let installed_theme = installed::get(Some(&install_dir))
             .context("Failed to retrieve installed theme directly after installtion")?;
 
         return match installed_theme {
@@ -108,9 +105,11 @@ impl Theme {
     }
 
     /// Download the theme repo into the data dir and parse it
-    ///
-    /// Not public, because the user only uses the install method
-    pub async fn download(git_url: &String, branch: &String) -> Result<Self> {
+    pub async fn download(
+        git_url: &String,
+        branch: Option<&String>,
+        save_dir: Option<&PathBuf>,
+    ) -> Result<Self> {
         // We need to first download the repo, before we can parse its config
         let url = Url::parse(&git_url).context("Invalid URL passed")?;
         let dir_name = url
@@ -120,19 +119,28 @@ impl Theme {
             .expect("Invalid Git URL passed");
 
         // clone repo
-        let clone_path = expanduser(DEFAULT_DOWNLOAD_PATH)
-            .context(format!(
-                "Failed to expand default download path: {}",
-                DEFAULT_DOWNLOAD_PATH
-            ))?
-            .join(dir_name);
+        let clone_path = expanduser(
+            save_dir
+                .map(|path| path.to_str().unwrap())
+                .unwrap_or(DEFAULT_DOWNLOAD_PATH),
+        )
+        .context(format!(
+            "Failed to expand default download path: {}",
+            DEFAULT_DOWNLOAD_PATH
+        ))?
+        .join(dir_name);
         let clone_path_string = &clone_path
             .to_str()
             .context(format!("Download path contains non-unicode characters."))?;
 
         let clone_cmd = format!(
-            "cd {} && git clone --depth 1 --branch {} {}",
-            clone_path_string, branch, git_url
+            "mkdir -p {} && cd {} && git clone --depth 1 {} {}",
+            clone_path_string,
+            clone_path_string,
+            branch
+                .map(|branch_name| "--branch ".to_owned() + branch_name)
+                .unwrap_or("".to_owned()),
+            git_url
         );
 
         std::process::Command::new("sh")
@@ -143,7 +151,7 @@ impl Theme {
             .output()?;
 
         // parse hyprtheme.toml
-        Theme::from_directory(&clone_path).await
+        SavedTheme::from_directory(&clone_path).await
     }
 
     /// hypr_config_dir is the absolute path
@@ -352,7 +360,7 @@ impl Theme {
             .meta
             .name
             .bytes()
-            .all(|character| matches!(character, b'a'..=b'z' | b'0'..=b'9' | b'_' | b'-'))
+            .all(|character| matches!(character, b'a'..=b'z' | b'0'..=b'9' | b'_' | b'-' | b' '))
         {
             return Err(anyhow!("Theme name contains invalid characters. Only latin letters, numbers and '_', '-' are allowed."));
         }
@@ -379,7 +387,10 @@ impl Theme {
         Ok(std::fs::remove_dir_all(&self.path)?)
     }
 
-    pub fn update(&self) -> Result<()> {
+    /// Update the repository in the data directory
+    ///
+    /// Returns itself in case you want to chain methods
+    pub fn update(&self) -> Result<&Self> {
         println!(
             "Updating theme {} in {}",
             &self.config.meta.name,
@@ -395,7 +406,7 @@ impl Theme {
             .arg("git pull")
             .output()?;
 
-        return Ok(());
+        return Ok(&self);
     }
 
     // pub fn ensure_exists(&mut self) -> Result<(), anyhow::Error> {
@@ -417,26 +428,26 @@ impl Theme {
 }
 
 // display
-impl std::fmt::Display for Theme {
+impl std::fmt::Display for SavedTheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.config.meta.name,)
     }
 }
 
 #[derive(Debug, Deserialize)]
-struct ThemeMeta {
-    name: String,
-    description: String,
-    version: String,
-    author: String,
+pub struct ThemeMeta {
+    pub name: String,
+    pub description: String,
+    pub version: String,
+    pub author: String,
     /// Git repository of the theme
-    git: String,
-    /// Entry point of the hyprtheme Hyprland config file.
-    ///
+    pub git: String,
     /// The path to the Hyprland config directory
-    hypr_directory: PathBuf,
+    pub hypr_directory: PathBuf,
     /// Git Branch of the theme repository
-    branch: String,
+    pub branch: String,
+    // Todo: Do we need to know where the entry config is?
+    // Entry point of the hyprtheme Hyprland config file.
 }
 
 #[derive(Debug, Deserialize)]
@@ -494,3 +505,8 @@ struct ExtraConfig {
     /// Gets displayed to the user. Describes what this is
     description: Option<String>,
 }
+
+/// Get the saved theme in the data directory by its name
+///
+/// - name: The name of the theme as in its theme.toml config file
+pub fn get_saved(name: &str) -> Result<Option<SavedTheme>> {}

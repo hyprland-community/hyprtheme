@@ -29,7 +29,7 @@ pub enum CliCommands {
     UpdateAll(Update),
 
     /// Remove a saved theme from the data directory
-    Remove(Clean),
+    Remove(Remove),
 
     /// Removes all saved themes, excluding the currently installed one
     Clean(CleanAll),
@@ -40,10 +40,14 @@ pub enum CliCommands {
 }
 
 #[derive(Parser)]
-pub struct Clean {
+pub struct Remove {
     /// The name of the theme to remove from the data directory
     #[arg(short, long)]
     pub theme_name: String,
+
+    /// The data directory of Hyprtheme, by default in `~/.local/share/hyprtheme/`
+    #[arg(short, long, default_value = "~/.local/share/hyprtheme",value_parser=parse_path)]
+    pub data_dir: PathBuf,
 }
 
 #[derive(Parser)]
@@ -140,6 +144,10 @@ pub struct Update {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
     pub theme_dir: PathBuf,
+
+    /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
+    #[arg(short, long, default_value = "~/.local/share/hyprtheme/themes")]
+    pub data_dir: PathBuf,
 }
 
 #[derive(Parser)]

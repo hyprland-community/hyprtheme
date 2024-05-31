@@ -43,7 +43,7 @@ async fn main() -> ExitCode {
 
             let git_data: GitUrlBranch = match arguments.name {
                 ThemeInstallName::Featured(theme) => {
-                    let found_theme = saved::find_saved(&theme)
+                    let found_theme = saved::find_saved(&theme, Some(&arguments.data_dir))
                         .expect("Failed to lookup saved themes")
                         .map(|theme| GitUrlBranch {
                             // TODO this is not the correct URL, it needs to be a @git url
@@ -102,7 +102,7 @@ async fn main() -> ExitCode {
             installed::get(Some(&arguments.theme_dir))
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
-                .update()
+                .update(Some(&arguments.data_dir))
                 .await
                 .expect("Failed to update theme");
         }
@@ -126,7 +126,7 @@ async fn main() -> ExitCode {
             //         .map_err(|error| println!("Error uninstalling current theme:\n{}", error));
             // }
 
-            saved::find_saved(&arguments.theme_name)
+            saved::find_saved(&arguments.theme_name, Some(&arguments.data_dir))
                 .expect("Failed to lookup saved themes.")
                 .expect("Could not find specified saved theme.")
                 .remove()
@@ -140,7 +140,7 @@ async fn main() -> ExitCode {
 
         CliCommands::UpdateAll(arguments) => {
             // TODO
-            // update all saved themes, including the currently installed one
+            saved::get_all(None).expect("Failed to get all saved themes.")
         }
     }
 

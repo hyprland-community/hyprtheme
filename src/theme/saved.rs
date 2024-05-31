@@ -1,5 +1,6 @@
 use globset::{Glob, GlobSetBuilder};
 use pathdiff::diff_paths;
+use reqwest::header::Entry;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
@@ -9,7 +10,6 @@ use anyhow::{anyhow, Context, Result};
 use serde::Deserialize;
 
 use expanduser::expanduser;
-use url::Url;
 
 use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_INSTALL_PATH};
 
@@ -271,54 +271,9 @@ impl SavedTheme {
     // async fn copy_other_dots(&self) -> Result<()> {}
     // async fn setup_extra_configs(&self) -> Result<()> {}
 
-    // Create variables.conf if it does not exists yet in the hypr user dir
+    // TODO Create variables.conf if it does not exists yet in the hypr user dir
     // Append it after the Hyprtheme config, but before the rest
     // async fn create_variables_conf(&self) -> Result<()> {}
-
-    /// Create a theme struct from a hyprtheme repo.
-    ///
-    /// Like this a themes can be loaded into memory, queried
-    pub async fn from_directory(path: &PathBuf) -> Result<Self, anyhow::Error> {
-        // The default locations of the hyprtheme.toml config
-        let locations = vec!["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
-
-        // TODO check that hyprtheme.conf exists in the Hyprland config dir of this this theme
-
-        // Lets keep the errors by not using a find_map in case there are others reasons why the config cannot get accessed
-        let config_string = locations
-            .iter()
-            .map(|location| {
-                let config_path = path.join(location);
-                return fs::read_to_string(&config_path).map_err(|error| {
-                    anyhow::Error::from(error).context(format!(
-                        "Failed to read out file at {}",
-                        &config_path
-                            .to_str()
-                            .expect("Provided path has non-unicode characters ")
-                    ))
-                });
-            })
-            .collect::<Result<String, anyhow::Error>>()?;
-
-        // This might need more work. Not all data can be read out from the string
-        // I would like to add the theme path, too
-        let config: ParsedThemeConfig = toml::from_str(&config_string)?;
-
-        // Lets prevent weirdly named themes, like "ФΞд฿Ŀ"
-        if !config
-            .meta
-            .name
-            .bytes()
-            .all(|character| matches!(character, b'a'..=b'z' | b'0'..=b'9' | b'_' | b'-' | b' '))
-        {
-            return Err(anyhow!("Theme name contains invalid characters. Only latin letters, numbers and '_', '-' are allowed."));
-        }
-
-        return Ok(Self {
-            path: path.to_owned(),
-            config,
-        });
-    }
 
     /// Remove the theme from the data directory, therefore consumes self
     ///
@@ -455,7 +410,79 @@ struct ExtraConfig {
     description: Option<String>,
 }
 
+/// Create a theme struct from a hyprtheme repo.
+///
+/// Like this a themes can be loaded into memory, queried
+pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
+    // This might need more work. Not all data can be read out from the string
+    // I would like to add the theme path, too
+    let config: ParsedThemeConfig = toml::from_str(&get_theme_toml_config(&path)?)?;
+
+    // Lets prevent weirdly named themes, like "ФΞд฿Ŀ"
+    if !config
+        .meta
+        .name
+        .bytes()
+        .all(|character| matches!(character, b'a'..=b'z' | b'0'..=b'9' | b'_' | b'-' | b' '))
+    {
+        return Err(anyhow!("Theme name contains invalid characters. Only latin letters, numbers and '_', '-' are allowed."));
+    }
+
+    return Ok(SavedTheme {
+        path: path.to_owned(),
+        config,
+    });
+}
+
 /// Get the saved theme in the data directory by its name
 ///
 /// - name: The name of the theme as in its theme.toml config file
-pub fn find_saved(name: &str) -> Result<Option<SavedTheme>> {}
+/// - data_dir: Data directory of hyprtheme
+pub fn find_saved(name: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
+    let theme = get_all(data_dir)?
+        .into_iter()
+        .find(|theme| theme.config.meta.name == name);
+
+    return Ok(theme);
+}
+
+pub async fn get_all(data_dir: Option<&PathBuf>) -> Result<Vec<SavedTheme>> {
+    let data_dir: PathBuf = data_dir
+        .unwrap_or(&expanduser(DEFAULT_DOWNLOAD_PATH)?)
+        .to_owned();
+
+    let themes_dir = data_dir.join("./themes/");
+    let entries = fs::read_dir(themes_dir)?;
+
+    let mut themes: Vec<SavedTheme> = vec![];
+    for entry in entries {
+        themes.push(from_directory(&entry?.path()).await?);
+    }
+
+    return Ok(themes);
+}
+
+/// Get the raw string from the hyprtheme theme.toml config
+fn get_theme_toml_config(theme_dir: &PathBuf) -> Result<String> {
+    let locations = ["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
+    // TODO check that hyprtheme.conf exists in the Hyprland config dir of this this theme
+
+    // Lets keep the errors by not using a find_map in case there are others reasons why the config cannot get accessed
+    let config_string = locations
+        .iter()
+        .map(|location| {
+            let config_path = theme_dir.join(location);
+
+            return fs::read_to_string(&config_path).map_err(|error| {
+                anyhow::Error::from(error).context(format!(
+                    "Failed to read out file at {}",
+                    &config_path
+                        .to_str()
+                        .expect("Provided path has non-unicode characters ")
+                ))
+            });
+        })
+        .collect::<Result<String>>();
+
+    config_string
+}

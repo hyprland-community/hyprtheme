@@ -30,8 +30,8 @@ impl InstalledTheme {
     ///
     /// Consumes self, as this will overwrite the currently installed theme
     /// with the updated version
-    pub async fn update(self) -> Result<Self> {
-        let saved = saved::get_saved(&self.meta.name)
+    pub async fn update(self, data_dir: Option<&PathBuf>) -> Result<Self> {
+        let saved = saved::find_saved(&self.meta.name, data_dir)
             .context("Error looking up stored repository of the installed theme.")?
             .ok_or(anyhow!(
                 "Could not find saved repository of the installed theme in the data directory."

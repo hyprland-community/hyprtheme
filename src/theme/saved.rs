@@ -446,8 +446,9 @@ pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
 ///
 /// - name: The name of the theme as in its theme.toml config file
 /// - data_dir: Data directory of hyprtheme
-pub fn find_saved(name: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
-    let theme = get_all(data_dir)?
+pub async fn find_saved(name: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
+    let theme = get_all(data_dir)
+        .await?
         .into_iter()
         .find(|theme| theme.config.meta.name == name);
 

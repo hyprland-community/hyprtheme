@@ -9,7 +9,7 @@ use url::Url;
 
 use crate::consts::DEFAULT_DOWNLOAD_PATH;
 
-use super::saved::SavedTheme;
+use super::saved::{self, SavedTheme};
 
 // Contains the code to interact with featured themes
 // in the Hyprtheme repo
@@ -32,10 +32,12 @@ pub struct OnlineTheme {
 }
 
 impl OnlineTheme {
-    pub fn download(&self) -> Result<SavedTheme> {
+    pub async fn download(&self, data_dir: Option<&PathBuf>) -> Result<SavedTheme> {
         // TODO
         // reuse the function from `saved` theme?
         // Maybe I just use a standalone download function instead and share it
+
+        download(&self.repo, self.branch.as_ref(), data_dir).await
     }
 
     fn is_installed(&self, theme_dir: Option<&PathBuf>) -> Result<bool> {
@@ -87,7 +89,7 @@ pub async fn find_featured(theme_name: &str) -> Result<Option<OnlineTheme>> {
 pub async fn download(
     git_url: &String,
     branch: Option<&String>,
-    save_dir: Option<&PathBuf>,
+    data_dir: Option<&PathBuf>,
 ) -> Result<SavedTheme> {
     // We need to first download the repo, before we can parse its config
     let url = Url::parse(&git_url).context("Invalid URL passed")?;
@@ -99,7 +101,7 @@ pub async fn download(
 
     // clone repo
     let clone_path = expanduser(
-        save_dir
+        data_dir
             .map(|path| path.to_str().unwrap())
             .unwrap_or(DEFAULT_DOWNLOAD_PATH),
     )
@@ -130,5 +132,5 @@ pub async fn download(
         .output()?;
 
     // parse hyprtheme.toml
-    SavedTheme::from_directory(&clone_path).await
+    saved::from_directory(&clone_path).await
 }

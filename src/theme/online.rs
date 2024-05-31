@@ -1,9 +1,11 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
+use expanduser::expanduser;
 use reqwest::Client;
 
 use serde::Deserialize;
+use url::Url;
 
 use crate::consts::DEFAULT_DOWNLOAD_PATH;
 
@@ -18,15 +20,15 @@ use super::saved::SavedTheme;
 /// A fetched theme featured on Hyprtheme
 #[derive(Deserialize, Debug)]
 pub struct OnlineTheme {
-    name: String,
-    repo: String,
+    pub name: String,
+    pub repo: String,
     /// Branch of the repo. Optional, will otherwise just git clone without a specified branch
-    branch: Option<String>,
+    pub branch: Option<String>,
     // Todo figure out if this is nessesary, as it creates more maintenance burden
     // As of right now, it is not
-    config: String,
-    desc: String,
-    images: Vec<String>,
+    pub config: String,
+    pub desc: String,
+    pub images: Vec<String>,
 }
 
 impl OnlineTheme {
@@ -79,4 +81,54 @@ pub async fn find_featured(theme_name: &str) -> Result<Option<OnlineTheme>> {
         .find(|theme| theme.name.to_lowercase() == theme_name.to_lowercase());
 
     Ok(found_theme)
+}
+
+/// Download a theme from a repo into the data dir and parse it
+pub async fn download(
+    git_url: &String,
+    branch: Option<&String>,
+    save_dir: Option<&PathBuf>,
+) -> Result<SavedTheme> {
+    // We need to first download the repo, before we can parse its config
+    let url = Url::parse(&git_url).context("Invalid URL passed")?;
+    let dir_name = url
+        .path()
+        .split("/")
+        .last()
+        .expect("Invalid Git URL passed");
+
+    // clone repo
+    let clone_path = expanduser(
+        save_dir
+            .map(|path| path.to_str().unwrap())
+            .unwrap_or(DEFAULT_DOWNLOAD_PATH),
+    )
+    .context(format!(
+        "Failed to expand default download path: {}",
+        DEFAULT_DOWNLOAD_PATH
+    ))?
+    .join(dir_name);
+    let clone_path_string = &clone_path
+        .to_str()
+        .context(format!("Download path contains non-unicode characters."))?;
+
+    let clone_cmd = format!(
+        "mkdir -p {} && cd {} && git clone --depth 1 {} {}",
+        clone_path_string,
+        clone_path_string,
+        branch
+            .map(|branch_name| "--branch ".to_owned() + branch_name)
+            .unwrap_or("".to_owned()),
+        git_url
+    );
+
+    std::process::Command::new("sh")
+        .arg("-c")
+        .stdout(std::process::Stdio::inherit())
+        .stderr(std::process::Stdio::inherit())
+        .arg(&clone_cmd)
+        .output()?;
+
+    // parse hyprtheme.toml
+    SavedTheme::from_directory(&clone_path).await
 }

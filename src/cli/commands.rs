@@ -1,9 +1,7 @@
 use anyhow::{anyhow, Result};
 use clap::Parser;
-use regex::{Regex, RegexBuilder};
-use std::{clone, path::PathBuf};
-
-use crate::theme::saved::SavedTheme;
+use regex::RegexBuilder;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -31,10 +29,10 @@ pub enum CliCommands {
     UpdateAll(Update),
 
     /// Remove a saved theme from the data directory
-    Clean(Clean),
+    Remove(Clean),
 
     /// Removes all saved themes, excluding the currently installed one
-    CleanAll(CleanAll),
+    Clean(CleanAll),
     // Uri(Uri),
     // Enable(Enable),
     // Disable(Disable),
@@ -91,10 +89,12 @@ pub enum ThemeInstallName {
     /// Name of a theme featured on the Hyprtheme website
     Featured(String),
     /// Repository of a theme, like: git@github.com:hyprland-community/hyprtheme.git
-    Git((String, String)),
+    Git(String),
     /// Short version of a Github repository:
     /// author/repo-name
-    Github(String),
+    ///
+    /// Holds a vector of (author, repo-name)
+    Github((String, String)),
 }
 impl ThemeInstallName {
     pub fn parse(string: &str) -> Result<Self> {
@@ -104,9 +104,12 @@ impl ThemeInstallName {
         .case_insensitive(true)
         .build()
         .unwrap();
-
         if github_regex.is_match(string) {
-            return Ok(Self::Featured(string.to_owned()));
+            let (name, repo) = string
+                .split_once("/")
+                .expect("Git repo regex failed. Could not split at /");
+
+            return Ok(Self::Github((name.to_owned(), repo.to_owned())));
         }
 
         let git_repo_regex = RegexBuilder::new(
@@ -116,15 +119,13 @@ impl ThemeInstallName {
         .build()
         .unwrap();
         if git_repo_regex.is_match(string) {
-            let (name, repo) = string
-                .split_once("/")
-                .expect("Github repo regex failed. Could not split at /");
-            return Ok(Self::Git((name.to_owned(), repo.to_owned())));
+            return Ok(Self::Git(string.to_owned()));
         }
 
-        Err(anyhow!(
-            "Provided theme argument is not a valid git repository, nor featured theme name."
-        ))
+        // We cannot fetch theme names here,
+        // as this would be async and Clap doesnt like that
+        // so we just assume it's a featured theme name
+        Ok(Self::Featured(string.to_owned()))
     }
 }
 

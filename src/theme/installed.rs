@@ -22,7 +22,7 @@ pub struct InstalledTheme {
     /// The config which got copied over to `.config/hypr/hyprtheme/theme.toml`
     // We only save the meta, as this is not a `SavedTheme`, thus shouldn't have the same methods,
     // but we might want to query data about it
-    meta: ThemeMeta,
+    pub meta: ThemeMeta,
 }
 
 impl InstalledTheme {
@@ -36,6 +36,10 @@ impl InstalledTheme {
             .ok_or(anyhow!(
                 "Could not find saved repository of the installed theme in the data directory."
             ))?;
+
+        // TODO download theme if it is not saved anymore
+        // nessecary if someone downloaded dots which use Hyprtheme and the data dir is not in them
+        // The data dir should not be source controlled as they can be big and there can be many
 
         saved.update()?.install(Some(&self.path)).await
 

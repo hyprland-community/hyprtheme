@@ -26,7 +26,7 @@ pub struct SavedTheme {
     path: PathBuf,
 
     /// Parsed theme config
-    config: ParsedThemeConfig,
+    pub config: ParsedThemeConfig,
 }
 
 /// Parsed theme config, does not have computed properties yet
@@ -34,7 +34,7 @@ pub struct SavedTheme {
 /// For that see the Theme struct
 #[derive(Deserialize, Debug)]
 struct ParsedThemeConfig {
-    meta: ThemeMeta,
+    pub meta: ThemeMeta,
     version: String,
     hypr: HyprConfig,
     dots: Vec<DotsDirectoryConfig>,
@@ -54,13 +54,12 @@ struct ParsedThemeConfig {
 // and then install method
 
 impl SavedTheme {
-    /// Has an optional install_directory argument, as Hyprland allows for custom config paths
-    /// Returns the install directory path
-    pub async fn install(&self, install_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
+    /// Has an optional `data_dir` argument, which by default is `~/.local/share/hyprtheme/themes`
+    pub async fn install(&self, data_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
         let meta = &self.config.meta;
 
         // TODO use default value for theme config instead of option, to simplify this
-        let install_dir = install_dir
+        let install_dir = data_dir
             .unwrap_or(&expanduser(&DEFAULT_INSTALL_PATH).context(format!(
                 "Failed to expand home directory for the default install path: {}",
                 DEFAULT_INSTALL_PATH
@@ -102,56 +101,6 @@ impl SavedTheme {
                 install_dir.display()
             ))),
         };
-    }
-
-    /// Download the theme repo into the data dir and parse it
-    pub async fn download(
-        git_url: &String,
-        branch: Option<&String>,
-        save_dir: Option<&PathBuf>,
-    ) -> Result<Self> {
-        // We need to first download the repo, before we can parse its config
-        let url = Url::parse(&git_url).context("Invalid URL passed")?;
-        let dir_name = url
-            .path()
-            .split("/")
-            .last()
-            .expect("Invalid Git URL passed");
-
-        // clone repo
-        let clone_path = expanduser(
-            save_dir
-                .map(|path| path.to_str().unwrap())
-                .unwrap_or(DEFAULT_DOWNLOAD_PATH),
-        )
-        .context(format!(
-            "Failed to expand default download path: {}",
-            DEFAULT_DOWNLOAD_PATH
-        ))?
-        .join(dir_name);
-        let clone_path_string = &clone_path
-            .to_str()
-            .context(format!("Download path contains non-unicode characters."))?;
-
-        let clone_cmd = format!(
-            "mkdir -p {} && cd {} && git clone --depth 1 {} {}",
-            clone_path_string,
-            clone_path_string,
-            branch
-                .map(|branch_name| "--branch ".to_owned() + branch_name)
-                .unwrap_or("".to_owned()),
-            git_url
-        );
-
-        std::process::Command::new("sh")
-            .arg("-c")
-            .stdout(std::process::Stdio::inherit())
-            .stderr(std::process::Stdio::inherit())
-            .arg(&clone_cmd)
-            .output()?;
-
-        // parse hyprtheme.toml
-        SavedTheme::from_directory(&clone_path).await
     }
 
     /// hypr_config_dir is the absolute path
@@ -329,7 +278,7 @@ impl SavedTheme {
     /// Create a theme struct from a hyprtheme repo.
     ///
     /// Like this a themes can be loaded into memory, queried
-    async fn from_directory(path: &PathBuf) -> Result<Self, anyhow::Error> {
+    pub async fn from_directory(path: &PathBuf) -> Result<Self, anyhow::Error> {
         // The default locations of the hyprtheme.toml config
         let locations = vec!["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
 
@@ -509,4 +458,4 @@ struct ExtraConfig {
 /// Get the saved theme in the data directory by its name
 ///
 /// - name: The name of the theme as in its theme.toml config file
-pub fn get_saved(name: &str) -> Result<Option<SavedTheme>> {}
+pub fn find_saved(name: &str) -> Result<Option<SavedTheme>> {}

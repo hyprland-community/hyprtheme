@@ -143,7 +143,7 @@ pub struct Uninstall {
 pub struct Update {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
-    pub theme_dir: PathBuf,
+    pub config_dir: PathBuf,
 
     /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
     #[arg(short, long, default_value = "~/.local/share/hyprtheme/themes")]
@@ -152,8 +152,13 @@ pub struct Update {
 
 #[derive(Parser)]
 pub struct CleanAll {
+    /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
     #[arg(short,long,default_value="~/.local/share/hyprtheme/themes",value_parser=parse_path)]
-    pub data_directory: PathBuf,
+    pub data_dir: PathBuf,
+
+    /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
+    #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    pub config_dir: PathBuf,
 }
 
 fn parse_path(path: &str) -> Result<PathBuf> {

@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context, Ok, Result};
 use serde::Deserialize;
 
 use expanduser::expanduser;
@@ -311,6 +311,14 @@ impl SavedTheme {
             .output()?;
 
         return Ok(&self);
+    }
+
+    /// Check if this saved theme is also installed
+    pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
+        let is_installed = installed::get(config_dir)?
+            .map_or(false, |theme| theme.meta.name == self.config.meta.name);
+
+        Ok(is_installed)
     }
 
     // pub fn ensure_exists(&mut self) -> Result<(), anyhow::Error> {

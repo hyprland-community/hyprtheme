@@ -99,7 +99,7 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Update(arguments) => {
-            installed::get(Some(&arguments.theme_dir))
+            installed::get(Some(&arguments.config_dir))
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
                 .update(Some(&arguments.data_dir))
@@ -134,13 +134,30 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Clean(arguments) => {
-            // TODO
-            // remove all downloaded themes except the installed one from the data directory
+            let themes = saved::get_all(Some(&arguments.data_dir))
+                .await
+                .expect("Failed to lookup saved themes.");
+
+            for theme in themes {
+                if theme
+                    .is_installed(Some(&arguments.config_dir))
+                    .await
+                    .expect("Failed to check installed theme")
+                {
+                    continue;
+                }
+                theme.remove().expect("Failed to remove specified theme.");
+            }
         }
 
         CliCommands::UpdateAll(arguments) => {
-            // TODO
-            saved::get_all(None).expect("Failed to get all saved themes.")
+            let themes = saved::get_all(Some(&arguments.data_dir))
+                .await
+                .expect("Failed to lookup saved themes.");
+
+            for theme in themes {
+                theme.update().expect("Failed to update theme.");
+            }
         }
     }
 

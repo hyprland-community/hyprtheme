@@ -11,8 +11,9 @@ use serde::Deserialize;
 
 use expanduser::expanduser;
 
-use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_INSTALL_PATH};
+use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_HYPR_CONFIG_PATH};
 
+use super::helper::{create_hyrptheme_source_string, is_theme_installed};
 use super::{installed, installed::InstalledTheme};
 
 /// A theme in the data directory, thus saved to the disc.
@@ -55,50 +56,34 @@ struct ParsedThemeConfig {
 
 impl SavedTheme {
     /// Has an optional `data_dir` argument, which by default is `~/.local/share/hyprtheme/themes`
-    pub async fn install(&self, data_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
+    pub async fn install(&self, hypr_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
         let meta = &self.config.meta;
 
         // TODO use default value for theme config instead of option, to simplify this
-        let install_dir = data_dir
-            .unwrap_or(&expanduser(&DEFAULT_INSTALL_PATH).context(format!(
+        let hypr_dir = hypr_dir
+            .unwrap_or(&expanduser(&DEFAULT_HYPR_CONFIG_PATH).context(format!(
                 "Failed to expand home directory for the default install path: {}",
-                DEFAULT_INSTALL_PATH
+                DEFAULT_HYPR_CONFIG_PATH
             ))?)
             .to_path_buf();
 
-        let theme_dir_binding = &install_dir.join(&meta.name);
-        let theme_dir = match theme_dir_binding.to_str() {
-            Some(string) => Ok(string),
-            None => Err(anyhow!(
-                "Failed to install: Theme directory contains Non-UTF8 characters.",
-            )),
-        }?;
-
-        // TODO: Check for update and if yes, prompt for update
-
-        println!("Installing theme {} to {}\n", &meta.name, &theme_dir);
-
-        // Now this is what I want:
-        // Check if its download: Yes: Update? and install  | No: Download and install
-        // But lets do that later
-        // TODO: Check for updates and prompt for it
+        let install_dir = &hypr_dir.join("./hyprtheme/").join(&meta.name);
 
         // TODO: What to do when the install process fails mid-install?
         // Revert back? Leave it? Crash the OS?
 
-        &self.setup_dots(&install_dir).await?;
+        &self.setup_dots(install_dir).await?;
+        &self.run_setup_script(install_dir, &hypr_dir).await?;
 
-        //
-        // TODO: Where to run setup.sh in data folder or hypr config folder?
-        // Set installed theme data path in $PATH variable or smth, so that setup.sh knows where it can find theme data
-        let installed_theme = installed::get(Some(&install_dir))
+        let installed_theme = installed::get(Some(&hypr_dir))
+            .await
             .context("Failed to retrieve installed theme directly after installtion")?;
 
         return match installed_theme {
             Some(theme) => Ok(theme),
             None => Err(anyhow!(format!(
-                "Failed to install theme. hyprtheme.conf could not be located in {}. Plz open up an issue and we shall fix it!",
-                install_dir.display()
+                "Failed to install theme. hyprtheme.conf could not be located in {}. Please open up an issue and we shall fix it!",
+                hypr_dir.display()
             ))),
         };
     }
@@ -124,28 +109,39 @@ impl SavedTheme {
         Ok(())
     }
 
+    async fn run_setup_script(&self, install_dir: &PathBuf, hypr_dir: &PathBuf) -> Result<()> {
+        let setup_script_path = &self.path.join(&self.config.lifetime.setup);
+
+        std::process::Command::new("bash")
+            .env("THEME_DIR", &self.path)
+            .env("HYPR_INSTALL_DIR", &install_dir)
+            .env("HYPR_CONFIG_DIR", &hypr_dir)
+            .arg(&setup_script_path)
+            .stdout(std::process::Stdio::inherit())
+            .stderr(std::process::Stdio::inherit())
+            .current_dir(&self.path)
+            .output()?;
+
+        Ok(())
+    }
+
     /// Move the hypr config dir into `~/.config/hypr/hyprtheme`
     /// And then source it
-    fn setup_hyprtheme_hypr_dots(&self, install_dir: &PathBuf) -> Result<()> {
+    fn setup_hyprtheme_hypr_dots(&self, hypr_dir: &PathBuf) -> Result<()> {
         fs::copy(
-            &self.path.join(&self.config.hypr.from),
-            &install_dir.join("hypr/hyprtheme/"),
+            &self.path.join(&self.config.hypr.location),
+            &hypr_dir.join("hypr/hyprtheme/"),
         )
         .context("Failed to copy over hypr config directory")?;
         // Calculate theme source string, like `source=~/.config/hypr/settings.conf`
         // TODO: replace absolute source path with ~ if possible
         // makes config more portable
 
-        // TODO: how to handle custom hypr config locations and different install paths
-        let hyprtheme_config_path = &install_dir.join("hypr/hyprtheme.conf");
-
-        let hyprtheme_source_str = "source=".to_string()
-            + &install_dir
-                .join("hypr/hyprtheme/hyprtheme.conf")
-                .to_string_lossy();
+        let hyprland_config_path = &hypr_dir.join("hyprland.conf");
+        let hyprtheme_source_str = create_hyrptheme_source_string(hypr_dir);
         // Read out hyprland.conf via std::fs::read_to_string("list.txt").unwrap();
         // Check if hyprtheme.conf is sourced in hyprland.conf, if not, source it
-        let is_already_sourced = std::fs::read_to_string(&hyprtheme_config_path)
+        let is_already_sourced = std::fs::read_to_string(&hyprland_config_path)
             .context("Failed to read out main hyprtheme.conf")?
             .contains(&hyprtheme_source_str);
 
@@ -155,7 +151,7 @@ impl SavedTheme {
             let mut config_file = OpenOptions::new()
                 .write(true)
                 .append(true)
-                .open(&hyprtheme_config_path)?;
+                .open(&hyprland_config_path)?;
 
             config_file.write_all(&hyprtheme_source_str.as_bytes())?;
         }
@@ -222,7 +218,7 @@ impl SavedTheme {
                 );
 
                 // Ignore `hypr_directory` files, as they get treated differently
-                if from_path_relative.starts_with(&self.config.hypr.from) {
+                if from_path_relative.starts_with(&self.config.hypr.location) {
                     continue;
                 }
 
@@ -315,10 +311,7 @@ impl SavedTheme {
 
     /// Check if this saved theme is also installed
     pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
-        let is_installed = installed::get(config_dir)?
-            .map_or(false, |theme| theme.meta.name == self.config.meta.name);
-
-        Ok(is_installed)
+        is_theme_installed(&self.config.meta.repo, config_dir).await
     }
 
     // pub fn ensure_exists(&mut self) -> Result<(), anyhow::Error> {
@@ -353,11 +346,11 @@ pub struct ThemeMeta {
     pub version: String,
     pub author: String,
     /// Git repository of the theme
-    pub git: String,
+    pub repo: String,
     /// The path to the Hyprland config directory
     pub hypr_directory: PathBuf,
     /// Git Branch of the theme repository
-    pub branch: String,
+    pub branch: Option<String>,
     // Todo: Do we need to know where the entry config is?
     // Entry point of the hyprtheme Hyprland config file.
 }
@@ -365,7 +358,7 @@ pub struct ThemeMeta {
 #[derive(Debug, Deserialize)]
 struct HyprConfig {
     /// Relative path to the Hyprland config directory in the theme repository
-    from: PathBuf,
+    location: PathBuf,
     /// Minimum required Hyprland version. Either a semver-string for a tagged release or 'git' for the latest git version.
     min_version: String,
 }
@@ -446,11 +439,11 @@ pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
 ///
 /// - name: The name of the theme as in its theme.toml config file
 /// - data_dir: Data directory of hyprtheme
-pub async fn find_saved(name: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
+pub async fn find_saved(repo_url: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
     let theme = get_all(data_dir)
         .await?
         .into_iter()
-        .find(|theme| theme.config.meta.name == name);
+        .find(|theme| theme.config.meta.repo == repo_url);
 
     return Ok(theme);
 }
@@ -476,7 +469,6 @@ fn get_theme_toml_config(theme_dir: &PathBuf) -> Result<String> {
     let locations = ["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
     // TODO check that hyprtheme.conf exists in the Hyprland config dir of this this theme
 
-    // Lets keep the errors by not using a find_map in case there are others reasons why the config cannot get accessed
     let config_string = locations
         .iter()
         .map(|location| {

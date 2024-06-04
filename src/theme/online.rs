@@ -9,7 +9,11 @@ use url::Url;
 
 use crate::consts::DEFAULT_DOWNLOAD_PATH;
 
-use super::saved::{self, SavedTheme};
+use super::{
+    helper::is_theme_installed,
+    installed,
+    saved::{self, SavedTheme},
+};
 
 // Contains the code to interact with featured themes
 // in the Hyprtheme repo
@@ -33,24 +37,14 @@ pub struct OnlineTheme {
 
 impl OnlineTheme {
     pub async fn download(&self, data_dir: Option<&PathBuf>) -> Result<SavedTheme> {
-        // TODO
-        // reuse the function from `saved` theme?
-        // Maybe I just use a standalone download function instead and share it
-
         download(&self.repo, self.branch.as_ref(), data_dir).await
     }
 
-    fn is_installed(&self, theme_dir: Option<&PathBuf>) -> Result<bool> {
-        let dir: PathBuf = theme_dir
-            .unwrap_or(&expanduser::expanduser(DEFAULT_DOWNLOAD_PATH)?)
-            .join(&self.name);
-
-        // TODO this is a FS call, so why is it not a result?
-        Ok(dir.exists())
+    pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
+        is_theme_installed(&self.repo, config_dir).await
     }
 
-    // TODO maybe
-    // Open the theme in the browser
+    // TODO maybe open the theme in the browser
     // fn open_repo(&self) -> () {}
 }
 
@@ -88,7 +82,7 @@ pub async fn find_featured(theme_name: &str) -> Result<Option<OnlineTheme>> {
 /// Download a theme from a repo into the data dir and parse it
 pub async fn download(
     git_url: &String,
-    branch: Option<&String>,
+    branch: Option<&str>,
     data_dir: Option<&PathBuf>,
 ) -> Result<SavedTheme> {
     // We need to first download the repo, before we can parse its config
@@ -110,6 +104,7 @@ pub async fn download(
         DEFAULT_DOWNLOAD_PATH
     ))?
     .join(dir_name);
+
     let clone_path_string = &clone_path
         .to_str()
         .context(format!("Download path contains non-unicode characters."))?;

@@ -1,16 +1,11 @@
 mod cli;
-use crate::cli::commands::ThemeInstallName;
+use crate::cli::commands::ThemeName;
 mod consts;
 mod theme;
 use clap::Parser;
 use cli::commands::CliCommands;
-use expanduser::expanduser;
-use std::process::Termination;
-use std::{path::PathBuf, process::ExitCode};
-use theme::installed::InstalledTheme;
+use std::process::ExitCode;
 use theme::online;
-use theme::saved::SavedTheme;
-use theme::{installed, saved};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -42,12 +37,12 @@ async fn main() -> ExitCode {
             // TODO prompt for update if theme is already installed
 
             let git_data: GitUrlBranch = match arguments.name {
-                ThemeInstallName::Featured(theme) => {
+                ThemeName::Featured(theme) => {
                     let found_theme = saved::find_saved(&theme, Some(&arguments.data_dir))
+                        .await
                         .expect("Failed to lookup saved themes")
                         .map(|theme| GitUrlBranch {
-                            // TODO this is not the correct URL, it needs to be a @git url
-                            url: theme.config.meta.git,
+                            url: theme.config.meta.repo,
                             branch: None,
                         })
                         .or(online::find_featured(&theme)
@@ -65,19 +60,26 @@ async fn main() -> ExitCode {
                     }
                 }
 
-                ThemeInstallName::Github((author, repo)) => GitUrlBranch {
+                ThemeName::Github((author, repo)) => GitUrlBranch {
                     url: "git@github.com:".to_string() + &author + "/" + &repo + ".git",
                     branch: arguments.branch,
                 },
 
-                ThemeInstallName::Git(github_string) => GitUrlBranch {
+                ThemeName::Git(github_string) => GitUrlBranch {
                     url: github_string,
                     branch: arguments.branch,
                 },
             };
 
-            // If a theme is already installed, we just install it again
-            // Lets keep it simple
+            let saved_theme = saved::find_saved(&git_data.url, Some(&arguments.data_dir)).await;
+
+            //  TODO
+            // Check if its download: Yes: Update? and install  | No: Download and install
+            //
+            match saved_theme {
+                Ok(saved) => {}
+                Err(_) => {}
+            }
             theme::online::download(
                 &git_data.url,
                 git_data.branch.as_ref(),
@@ -88,18 +90,22 @@ async fn main() -> ExitCode {
             .install(Some(&arguments.data_dir))
             .await
             .expect("Failed to install theme");
+
+            println!("Installing theme {} to {}\n", &meta.name, &theme_dir);
         }
 
         CliCommands::Uninstall(arguments) => {
-            installed::get(Some(&arguments.config_dir))
+            installed::get(Some(&arguments.hypr_dir))
+                .await
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
-                .uninstall()
+                .uninstall(Some(&arguments.hypr_dir))
                 .expect("Failed to uninstall theme");
         }
 
         CliCommands::Update(arguments) => {
-            installed::get(Some(&arguments.config_dir))
+            installed::get(Some(&arguments.hypr_dir))
+                .await
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
                 .update(Some(&arguments.data_dir))
@@ -108,25 +114,8 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Remove(arguments) => {
-            // TODO
-            // remove downloaded theme from the data directory
-            // If the installed theme would get removed prompt
-            // that this will also uninstall the current theme.
-            // Nessecary as otherwise updating the installed theme will be undefined behavior
-            // TODO: Update should reinstall the theme current theme in the data dir if removed
-
-            // TODO config dir argument to installed::get
-            // Not sure if this is necessary
-            //
-            // let installed_theme_option: Option<InstalledTheme> =
-            //     installed::get(None).unwrap_or(None);
-            // if let Some(installed) = installed_theme_option {
-            //     installed
-            //         .uninstall()
-            //         .map_err(|error| println!("Error uninstalling current theme:\n{}", error));
-            // }
-
             saved::find_saved(&arguments.theme_name, Some(&arguments.data_dir))
+                .await
                 .expect("Failed to lookup saved themes.")
                 .expect("Could not find specified saved theme.")
                 .remove()
@@ -140,7 +129,7 @@ async fn main() -> ExitCode {
 
             for theme in themes {
                 if theme
-                    .is_installed(Some(&arguments.config_dir))
+                    .is_installed(Some(&arguments.hypr_dir))
                     .await
                     .expect("Failed to check installed theme")
                 {

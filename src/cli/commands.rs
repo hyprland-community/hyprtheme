@@ -16,7 +16,6 @@ pub enum CliCommands {
     /// - Theme name for themes featured on "https://hyprland-community/hyprtheme/browse"
     /// - A git url
     /// - For Github: author/reponame
-    // TODO implement the accepted values
     Install(Install),
 
     /// Uninstall the installed theme
@@ -62,7 +61,7 @@ pub struct List {
 
     /// The path to the the Hyprland config directory
     #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
-    pub config_dir: PathBuf,
+    pub hypr_dir: PathBuf,
 
     /// The path to the the Hyprtheme data directory
     #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
@@ -75,8 +74,8 @@ pub struct Install {
     /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
     /// - Git repository: git@github.com:hyprland-community/hyprtheme.git
     /// - For Github: author/repo-name
-    #[arg(short,long,value_parser=ThemeInstallName::parse)]
-    pub name: ThemeInstallName,
+    #[arg(short,long,value_parser=ThemeName::parse)]
+    pub name: ThemeName,
 
     /// The branch of the repository to install
     #[arg(short, long)]
@@ -89,7 +88,7 @@ pub struct Install {
 }
 
 #[derive(Clone)]
-pub enum ThemeInstallName {
+pub enum ThemeName {
     /// Name of a theme featured on the Hyprtheme website
     Featured(String),
     /// Repository of a theme, like: git@github.com:hyprland-community/hyprtheme.git
@@ -100,7 +99,7 @@ pub enum ThemeInstallName {
     /// Holds a vector of (author, repo-name)
     Github((String, String)),
 }
-impl ThemeInstallName {
+impl ThemeName {
     pub fn parse(string: &str) -> Result<Self> {
         let github_regex = RegexBuilder::new(
             r"^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}\/[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$",
@@ -136,14 +135,14 @@ impl ThemeInstallName {
 #[derive(Parser)]
 pub struct Uninstall {
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
-    pub config_dir: PathBuf,
+    pub hypr_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct Update {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
-    pub config_dir: PathBuf,
+    pub hypr_dir: PathBuf,
 
     /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
     #[arg(short, long, default_value = "~/.local/share/hyprtheme/themes")]
@@ -158,7 +157,7 @@ pub struct CleanAll {
 
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
-    pub config_dir: PathBuf,
+    pub hypr_dir: PathBuf,
 }
 
 fn parse_path(path: &str) -> Result<PathBuf> {

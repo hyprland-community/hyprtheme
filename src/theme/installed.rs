@@ -2,7 +2,7 @@ use crate::consts::DEFAULT_HYPR_CONFIG_PATH;
 
 use super::{
     helper::create_hyrptheme_source_string,
-    online,
+    installed, online,
     saved::{self, SavedTheme, ThemeMeta},
 };
 use anyhow::{anyhow, Context, Result};
@@ -12,18 +12,26 @@ use std::{
     path::PathBuf,
 };
 
-// Lets just copy the hyprtheme.toml during the install process, too
-// then read it out to see which theme and its version is installed.
-
 /// Get the installed theme.
 /// It is an Option type as there might be none installed.
 ///
 /// Optionally a hypr config directory can be given to look it up there.
 pub async fn get(config_dir: Option<&PathBuf>) -> Result<Option<InstalledTheme>> {
-    // Parse  < config_dir >/hyprtheme/meta.toml
-    // If not found, return none
-    // If err returns an error
-    // Otherwise returns `InstalledTheme`
+    let default_config_dir_bind = &expanduser(DEFAULT_HYPR_CONFIG_PATH)?;
+    let config_dir = config_dir.unwrap_or(default_config_dir_bind);
+    let hyprtheme_toml_path = config_dir.join("./hyprtheme/hyprtheme.toml");
+
+    if !hyprtheme_toml_path.try_exists()? {
+        return Ok(None);
+    }
+
+    let toml_string = fs::read_to_string(hyprtheme_toml_path)?;
+    let meta = serde_json::from_str::<ThemeMeta>(&toml_string)?;
+
+    Ok(Some(InstalledTheme {
+        path: config_dir.clone(),
+        meta,
+    }))
 }
 
 pub struct InstalledTheme {

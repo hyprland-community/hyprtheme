@@ -2,30 +2,22 @@ mod cli;
 use crate::cli::commands::ThemeName;
 mod consts;
 mod theme;
-use clap::Parser;
+use clap::{builder::Str, Parser};
 use cli::commands::CliCommands;
 use std::process::ExitCode;
-use theme::online;
+use theme::{installed, online, saved};
 
 #[tokio::main]
 async fn main() -> ExitCode {
     match CliCommands::parse() {
         CliCommands::List(arguments) => {
-            // TODO
-            // Fetch all featured and saved themes
-            // Display maybe like that:
-            // - <Theme name> [Installed]
-            // - <Theme name> [Saved]
-            // - <Theme name> [Saved]
-            // - <Theme name>
-
-            // for theme in repo::fetch_themes(&list.theme_dir, None)
-            //     .await
-            //     .unwrap()
-            //     .themes
-            // {
-            //     println!("{}", theme);
-            // }
+            println!(
+                "{}",
+                arguments
+                    .get_formatted_list()
+                    .await
+                    .expect("Failed to list the themes")
+            );
         }
 
         CliCommands::Install(arguments) => {
@@ -33,8 +25,6 @@ async fn main() -> ExitCode {
                 pub url: String,
                 pub branch: Option<String>,
             }
-
-            // TODO prompt for update if theme is already installed
 
             let git_data: GitUrlBranch = match arguments.name {
                 ThemeName::Featured(theme) => {
@@ -71,46 +61,68 @@ async fn main() -> ExitCode {
                 },
             };
 
-            let saved_theme = saved::find_saved(&git_data.url, Some(&arguments.data_dir)).await;
+            let saved_theme = saved::find_saved(&git_data.url, Some(&arguments.data_dir))
+                .await
+                .unwrap_or({
+                    println!("Failed to lookup saved themes! Downloading theme to be safe...");
+                    None
+                });
 
-            //  TODO
-            // Check if its download: Yes: Update? and install  | No: Download and install
-            //
-            match saved_theme {
-                Ok(saved) => {}
-                Err(_) => {}
-            }
-            theme::online::download(
-                &git_data.url,
-                git_data.branch.as_ref(),
-                Some(&arguments.data_dir),
-            )
-            .await
-            .expect("Failed to download theme")
-            .install(Some(&arguments.data_dir))
-            .await
-            .expect("Failed to install theme");
+            let saved_theme = match saved_theme {
+                Some(saved) => saved,
+                None => {
+                    let downloaded = theme::online::download(
+                        &git_data.url,
+                        git_data.branch.as_deref(),
+                        Some(&arguments.data_dir),
+                    )
+                    .await
+                    .expect("Failed to download theme");
+                    println!("Downloaded theme.");
+                    downloaded
+                }
+            };
 
-            println!("Installing theme {} to {}\n", &meta.name, &theme_dir);
+            let installed_theme = saved_theme
+                .install(Some(&arguments.hypr_dir))
+                .await
+                .expect("Failed to install theme");
+
+            println!(
+                "Installed theme {} to {}\n",
+                &installed_theme.meta.name,
+                &arguments.hypr_dir.display()
+            );
         }
 
         CliCommands::Uninstall(arguments) => {
-            installed::get(Some(&arguments.hypr_dir))
+            let installed_theme = installed::get(Some(&arguments.hypr_dir))
                 .await
                 .expect("Error retrieving installed theme")
-                .expect("No installed theme found")
+                .expect("No installed theme found");
+
+            let name = &installed_theme.meta.name.clone();
+
+            installed_theme
                 .uninstall(Some(&arguments.hypr_dir))
                 .expect("Failed to uninstall theme");
+
+            println!("Succesfully uninstalled theme: {}", &name);
         }
 
         CliCommands::Update(arguments) => {
-            installed::get(Some(&arguments.hypr_dir))
+            let installed_theme = installed::get(Some(&arguments.hypr_dir))
                 .await
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
                 .update(Some(&arguments.data_dir))
                 .await
                 .expect("Failed to update theme");
+
+            println!(
+                "Succesfully updated installed theme: {}",
+                &installed_theme.meta.name
+            );
         }
 
         CliCommands::Remove(arguments) => {
@@ -119,7 +131,9 @@ async fn main() -> ExitCode {
                 .expect("Failed to lookup saved themes.")
                 .expect("Could not find specified saved theme.")
                 .remove()
-                .expect("Failed to remove specified theme.")
+                .expect("Failed to remove specified theme.");
+
+            println!("Succesfully removed theme  {}", &arguments.theme_name);
         }
 
         CliCommands::Clean(arguments) => {
@@ -128,15 +142,20 @@ async fn main() -> ExitCode {
                 .expect("Failed to lookup saved themes.");
 
             for theme in themes {
+                let name = theme.config.meta.name.clone();
                 if theme
                     .is_installed(Some(&arguments.hypr_dir))
                     .await
-                    .expect("Failed to check installed theme")
+                    .expect(format!("Failed to check installed theme: {}", &name).as_str())
                 {
                     continue;
                 }
-                theme.remove().expect("Failed to remove specified theme.");
+                theme
+                    .remove()
+                    .expect(format!("Failed to remove theme: {}", &name).as_str());
             }
+
+            println!("Succesfully clean unused themes.");
         }
 
         CliCommands::UpdateAll(arguments) => {
@@ -147,6 +166,8 @@ async fn main() -> ExitCode {
             for theme in themes {
                 theme.update().expect("Failed to update theme.");
             }
+
+            println!("Succesfully updated all themes.");
         }
     }
 

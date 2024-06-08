@@ -13,7 +13,7 @@ use expanduser::expanduser;
 
 use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_HYPR_CONFIG_PATH};
 
-use super::helper::{create_hyrptheme_source_string, is_theme_installed};
+use super::helper::{create_hyrptheme_source_string, create_theme_id, is_theme_installed, ThemeId};
 use super::{installed, installed::InstalledTheme};
 
 /// A theme in the data directory, thus saved to the disc.
@@ -34,13 +34,16 @@ pub struct SavedTheme {
 ///
 /// For that see the Theme struct
 #[derive(Deserialize, Debug)]
-struct ParsedThemeConfig {
+pub struct ParsedThemeConfig {
     pub meta: ThemeMeta,
+    // TODO implement version check
     version: String,
     hypr: HyprConfig,
     dots: Vec<DotsDirectoryConfig>,
     lifetime: LifeTimeConfig,
+    // TODO install extra configs
     extra_configs: Vec<ExtraConfig>,
+    // TODO install dependencies
     dependencies: Vec<String>,
 }
 
@@ -72,8 +75,8 @@ impl SavedTheme {
         // TODO: What to do when the install process fails mid-install?
         // Revert back? Leave it? Crash the OS?
 
-        &self.setup_dots(install_dir).await?;
-        &self.run_setup_script(install_dir, &hypr_dir).await?;
+        let _ = &self.setup_dots(install_dir).await?;
+        let _ = &self.run_setup_script(install_dir, &hypr_dir).await?;
 
         let installed_theme = installed::get(Some(&hypr_dir))
             .await
@@ -97,10 +100,10 @@ impl SavedTheme {
         // TODO 2. Install extra configs
         // TODO 3. Add the variables config
 
-        self.copy_general_dots();
-        self.setup_hyprtheme_hypr_dots(&install_dir);
+        let _ = self.copy_general_dots()?;
+        let _ = self.setup_hyprtheme_hypr_dots(&install_dir)?;
 
-        // TODO: Prompt and install extra configs
+        // TODO  Prompt and install extra configs
 
         // TODO: Variables
         // Create variables.conf if it does not exists yet in the hypr user dir
@@ -157,8 +160,6 @@ impl SavedTheme {
         }
 
         Ok(())
-
-        // TODO remove outdated sourced config (install path changed after install / user used dots from someone who used hyprtheme and uses hyprtheme too)
     }
 
     /// Copy over the dot files, as specified in the theme toml.
@@ -355,6 +356,12 @@ pub struct ThemeMeta {
     // Entry point of the hyprtheme Hyprland config file.
 }
 
+impl ThemeMeta {
+    pub fn get_id(&self) -> ThemeId {
+        create_theme_id(&self.repo, self.branch.as_deref())
+    }
+}
+
 #[derive(Debug, Deserialize)]
 struct HyprConfig {
     /// Relative path to the Hyprland config directory in the theme repository
@@ -467,7 +474,6 @@ pub async fn get_all(data_dir: Option<&PathBuf>) -> Result<Vec<SavedTheme>> {
 /// Get the raw string from the hyprtheme theme.toml config
 fn get_theme_toml_config(theme_dir: &PathBuf) -> Result<String> {
     let locations = ["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
-    // TODO check that hyprtheme.conf exists in the Hyprland config dir of this this theme
 
     let config_string = locations
         .iter()

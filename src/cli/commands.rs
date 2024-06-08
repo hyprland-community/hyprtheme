@@ -3,12 +3,16 @@ use clap::Parser;
 use regex::RegexBuilder;
 use std::path::PathBuf;
 
+use crate::theme::{self, installed, online, saved};
+
+use super::list;
+
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
 pub enum CliCommands {
     /// List all saved themes
     /// and all featured on the official Hyprtheme site
-    List(List),
+    List(list::List),
 
     /// Install a theme from a repository
     ///
@@ -50,25 +54,6 @@ pub struct Remove {
 }
 
 #[derive(Parser)]
-pub struct List {
-    /// Wether to list the currently installed one theme too
-    #[arg(short, long, default_value = "true")]
-    pub installed: bool,
-
-    /// Wether to list featured downloadable themes
-    #[arg(short, long, default_value = "true")]
-    pub featured: bool,
-
-    /// The path to the the Hyprland config directory
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
-    pub hypr_dir: PathBuf,
-
-    /// The path to the the Hyprtheme data directory
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
-    pub data_dir: PathBuf,
-}
-
-#[derive(Parser)]
 pub struct Install {
     /// Either:
     /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
@@ -85,6 +70,10 @@ pub struct Install {
     /// The theme will be saved in the sub-directory "themes"
     #[arg(short,long,default_value="~/.local/share/hyprtheme/",value_parser=parse_path)]
     pub data_dir: PathBuf,
+
+    /// The path to the the Hyprland config directory, where the theme will be installed to.
+    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    pub hypr_dir: PathBuf,
 }
 
 #[derive(Clone)]
@@ -158,15 +147,6 @@ pub struct CleanAll {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
     #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
     pub hypr_dir: PathBuf,
-}
-
-fn parse_path(path: &str) -> Result<PathBuf> {
-    let path: PathBuf = shellexpand::tilde(path).as_ref().into();
-    if path.exists() {
-        Ok(path)
-    } else {
-        Err(anyhow!(format!("Path does not exist: {}", path.display())))
-    }
 }
 
 // #[derive(Parser)]

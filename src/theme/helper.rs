@@ -18,3 +18,10 @@ pub fn create_hyrptheme_source_string(hypr_dir: &PathBuf) -> String {
             .join("./hyprtheme/hyprtheme.conf")
             .to_string_lossy()
 }
+
+#[derive(Hash, PartialEq, Eq)]
+pub struct ThemeId(String);
+
+pub fn create_theme_id(repo: &str, branch: Option<&str>) -> ThemeId {
+    ThemeId(format!("{}{}", repo, branch.unwrap_or_else(|| "no_branch")))
+}

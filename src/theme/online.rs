@@ -37,11 +37,18 @@ pub struct OnlineTheme {
 
 impl OnlineTheme {
     pub async fn download(&self, data_dir: Option<&PathBuf>) -> Result<SavedTheme> {
-        download(&self.repo, self.branch.as_ref(), data_dir).await
+        download(&self.repo, self.branch.as_deref(), data_dir).await
     }
 
     pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
         is_theme_installed(&self.repo, config_dir).await
+    }
+
+    pub async fn is_saved(&self, data_dir: Option<&PathBuf>) -> Result<bool> {
+        Ok(saved::find_saved(&self.repo, data_dir)
+            .await
+            .context("Failure when locating saved theme")?
+            .is_some())
     }
 
     // TODO maybe open the theme in the browser

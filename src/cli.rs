@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 use clap::Parser;
 
-use crate::repo::find_theme;
-use crate::util::theme::Theme;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]

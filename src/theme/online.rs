@@ -15,6 +15,7 @@ use super::{
     saved::{self, SavedTheme},
 };
 
+
 // Contains the code to interact with featured themes
 // in the Hyprtheme repo
 
@@ -61,16 +62,6 @@ pub async fn fetch_themes(themes_json_url: Option<&str>) -> Result<Vec<OnlineThe
         "https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true",
     );
 
-    // let progress_bar = ProgressBar::new_spinner();
-    // progress_bar.set_style(
-    //     ProgressStyle::default_spinner()
-    //         .template("{spinner} {msg}")
-    //         .unwrap()
-    //         .tick_chars("🌑🌒🌓🌔🌕🌖🌗🌘|"),
-    // );
-    // progress_bar.enable_steady_tick(Duration::from_millis(50));
-    // progress_bar.set_message("Fetching themes");
-
     Ok(serde_json::from_str::<Vec<OnlineTheme>>(
         client.get(url).send().await?.text().await?.as_str(),
     )?)
@@ -93,12 +84,17 @@ pub async fn download(
     data_dir: Option<&PathBuf>,
 ) -> Result<SavedTheme> {
     // We need to first download the repo, before we can parse its config
-    let url = Url::parse(&git_url).context("Invalid URL passed")?;
-    let dir_name = url
-        .path()
-        .split("/")
-        .last()
+    let url = Url::parse(&git_url).context("Invalid git URL passed")?;
+    let dir_name = format!("{}{}", url.host().unwrap_or(""), url.path()) 
+    // url
+    //     .path()
+    //     .split("/")
+    //     .last()
         .expect("Invalid Git URL passed");
+    
+    // TODO first clone into /tmp/
+    // then get the name with the branch
+    // How to prevent conflicting folder names?
 
     // clone repo
     let clone_path = expanduser(
@@ -112,9 +108,10 @@ pub async fn download(
     ))?
     .join(dir_name);
 
-    let clone_path_string = &clone_path
-        .to_str()
-        .context(format!("Download path contains non-unicode characters."))?;
+    let clone_path_string = &clone_path.to_str().context(format!(
+        "Download path {} contains non-unicode characters.",
+        &clone_path.display()
+    ))?;
 
     let clone_cmd = format!(
         "mkdir -p {} && cd {} && git clone --depth 1 {} {}",

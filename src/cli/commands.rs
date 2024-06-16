@@ -1,11 +1,9 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::Parser;
 use regex::RegexBuilder;
 use std::path::PathBuf;
 
-use crate::theme::{self, installed, online, saved};
-
-use super::list;
+use super::{helper::parse_path, list};
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -57,8 +55,8 @@ pub struct Remove {
 pub struct Install {
     /// Either:
     /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
-    /// - Git repository: git@github.com:hyprland-community/hyprtheme.git
-    /// - For Github: author/repo-name
+    /// - Git repository: https://github.com/hyprland-community/hyprtheme
+    /// - Github short-form: author/repo-name
     #[arg(short,long,value_parser=ThemeName::parse)]
     pub name: ThemeName,
 

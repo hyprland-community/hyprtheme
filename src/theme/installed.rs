@@ -8,7 +8,7 @@ use super::{
 use anyhow::{anyhow, Context, Result};
 use expanduser::expanduser;
 use std::{
-    fs::{self, OpenOptions},
+    fs::{self},
     path::PathBuf,
 };
 

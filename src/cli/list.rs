@@ -4,6 +4,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use std::{any::Any, collections::HashMap, future::Future, path::PathBuf, vec};
 
+
 #[derive(Parser)]
 pub struct List {
     /// Wether to list featured downloadable themes

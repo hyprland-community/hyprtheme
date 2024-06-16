@@ -72,9 +72,6 @@ impl SavedTheme {
 
         let install_dir = &hypr_dir.join("./hyprtheme/").join(&meta.name);
 
-        // TODO: What to do when the install process fails mid-install?
-        // Revert back? Leave it? Crash the OS?
-
         let _ = &self.setup_dots(install_dir).await?;
         let _ = &self.run_setup_script(install_dir, &hypr_dir).await?;
 
@@ -375,15 +372,18 @@ struct HyprConfig {
 struct DotsDirectoryConfig {
     /// What to copy relative from the root of the repository
     from: PathBuf,
+
     /// The destination.
     ///
     /// If not specified it will be `to_copy` appended with `~/`
     to: Option<String>,
+
     // TODO: Parse this as Vec<Glob> and err if they are not valid globs
     /// Which dirs and files to ignore. Useful to ignore your own installer for example.
     /// By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
     /// You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
     ignore: Vec<String>,
+
     // TODO: Parse this as Vec<Glob> and err if they are not valid globs
     /// Regex strings
     include: Vec<String>,
@@ -399,6 +399,7 @@ struct LifeTimeConfig {
     /// Gets run after the theme got installed. Usually to restart changed apps
     /// Default path: .hyprtheme/setup.sh - If found it will run it, even if not specified
     setup: String,
+
     /// Gets run after the theme got uninstalled. Usually to kill started apps
     /// Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
     cleanup: String,
@@ -412,8 +413,10 @@ struct ExtraConfig {
     ///
     /// For example: `workspaces` (theme author also provides his own workspace setup, which might interfer with the users one)
     name: String,
+
     /// Path to the hyprlang `<extra_config>.conf` which will, if selected by the user, sourced by hyprtheme.conf
     path: String,
+
     /// Gets displayed to the user. Describes what this is
     description: Option<String>,
 }

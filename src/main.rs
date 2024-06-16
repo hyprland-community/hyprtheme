@@ -1,11 +1,10 @@
 mod cli;
-use crate::cli::commands::ThemeName;
 mod consts;
 mod theme;
 use clap::Parser;
 use cli::commands::CliCommands;
 use std::process::ExitCode;
-use theme::{installed, online, saved};
+use theme::{installed, saved};
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -21,78 +20,24 @@ async fn main() -> ExitCode {
         }
 
         CliCommands::Install(arguments) => {
-            struct GitUrlBranch {
-                pub url: String,
-                pub branch: Option<String>,
+            let installed_theme = arguments.install().await;
+
+            match installed_theme {
+                Ok(theme) => {
+                    println!(
+                        "Installed theme {} to {}\n",
+                        &theme.config.meta.name,
+                        &arguments.hypr_dir.display()
+                    );
+                }
+                Err(error) => {
+                    println!(
+                        "Failed to install theme to {}\n{}",
+                        &arguments.hypr_dir.display(),
+                        error
+                    );
+                }
             }
-
-            let git_data: GitUrlBranch = match arguments.name {
-                ThemeName::Featured(theme) => {
-                    let found_theme = saved::find_saved(&theme, Some(&arguments.data_dir))
-                        .await
-                        .expect("Failed to lookup saved themes")
-                        .map(|theme| GitUrlBranch {
-                            url: theme.config.meta.repo,
-                            branch: None,
-                        })
-                        .or(online::find_featured(&theme)
-                            .await
-                            .expect("Failed to fetch featured theme")
-                            .map(|theme| GitUrlBranch {
-                                url: theme.repo,
-                                branch: theme.branch,
-                            }))
-                        .expect("Failed to find theme by provided name.");
-
-                    GitUrlBranch {
-                        url: found_theme.url,
-                        branch: arguments.branch.or(found_theme.branch),
-                    }
-                }
-
-                ThemeName::Github((author, repo)) => GitUrlBranch {
-                    url: "git@github.com:".to_string() + &author + "/" + &repo + ".git",
-                    branch: arguments.branch,
-                },
-
-                ThemeName::Git(github_string) => GitUrlBranch {
-                    url: github_string,
-                    branch: arguments.branch,
-                },
-            };
-
-            let saved_theme = saved::find_saved(&git_data.url, Some(&arguments.data_dir))
-                .await
-                .unwrap_or({
-                    println!("Failed to lookup saved themes! Downloading theme to be safe...");
-                    None
-                });
-
-            let saved_theme = match saved_theme {
-                Some(saved) => saved,
-                None => {
-                    let downloaded = theme::online::download(
-                        &git_data.url,
-                        git_data.branch.as_deref(),
-                        Some(&arguments.data_dir),
-                    )
-                    .await
-                    .expect("Failed to download theme");
-                    println!("Downloaded theme.");
-                    downloaded
-                }
-            };
-
-            let installed_theme = saved_theme
-                .install(Some(&arguments.hypr_dir))
-                .await
-                .expect("Failed to install theme");
-
-            println!(
-                "Installed theme {} to {}\n",
-                &installed_theme.config.meta.name,
-                &arguments.hypr_dir.display()
-            );
         }
 
         CliCommands::Uninstall(arguments) => {
@@ -126,7 +71,23 @@ async fn main() -> ExitCode {
             );
         }
 
+        // Takes in a theme id,
+        // as otherwise we won't be able to tell which Gruvbox Theme should be uninstalled,
+        // if there are three with the same name, author but hosted on different platforms
         CliCommands::Remove(arguments) => {
+            // TODO
+            // So this is another problem
+            // Let's say we have 3 themes installed.
+            // One from Github, then Gitlab and some self-hosted thingy
+            // All are called Gruvbox and are from different users, all called Foo.
+            // Now we want to remove Gruvbox.
+            // Which one do we remove?
+            // The one from Gitlab?
+            // The one from Github?
+            // The one from self-hosted?
+            //
+            // We need to have an easy to write ID, so that the user can delete this theme
+            // Also we need to list the ID on list, too
             saved::find_saved(&arguments.theme_name, Some(&arguments.data_dir))
                 .await
                 .expect("Failed to lookup saved themes.")

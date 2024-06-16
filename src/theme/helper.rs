@@ -3,10 +3,10 @@ use anyhow::Result;
 use std::{fs, path::PathBuf};
 
 /// Check if a theme is installed by its repo url.
-pub async fn is_theme_installed(repo_url: &str, config_dir: Option<&PathBuf>) -> Result<bool> {
-    installed::get(config_dir)
-        .await
-        .map(|theme_option| theme_option.map_or(false, |theme| theme.config.meta.repo == repo_url))
+pub async fn is_theme_installed(theme_id: &ThemeId, config_dir: Option<&PathBuf>) -> Result<bool> {
+    installed::get(config_dir).await.map(|theme_option| {
+        theme_option.map_or(false, |theme| theme.config.meta.get_id() == *theme_id)
+    })
 }
 
 /// Create a source string to be used in the hyprland config file.
@@ -24,6 +24,8 @@ pub fn create_source_string(file_path: &PathBuf, hypr_dir: &PathBuf) -> String {
 }
 
 /// A branded string type to prevent passing any string where a theme id is expected.
+///
+/// A theme id is nessecary as different themes can have the same name and even author as they can be hosted on different git hosts.
 #[derive(Hash, PartialEq, Eq)]
 pub struct ThemeId(String);
 

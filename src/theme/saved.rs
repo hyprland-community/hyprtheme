@@ -292,7 +292,7 @@ impl SavedTheme {
 
     /// Check if this saved theme is also installed
     pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
-        is_theme_installed(&self.config.meta.repo, config_dir).await
+        is_theme_installed(&self.config.meta.get_id(), config_dir).await
     }
 }
 
@@ -411,11 +411,14 @@ pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
 ///
 /// - name: The name of the theme as in its theme.toml config file
 /// - data_dir: Data directory of hyprtheme
-pub async fn find_saved(repo_url: &str, data_dir: Option<&PathBuf>) -> Result<Option<SavedTheme>> {
+pub async fn find_saved(
+    theme_id: &ThemeId,
+    data_dir: Option<&PathBuf>,
+) -> Result<Option<SavedTheme>> {
     let theme = get_all(data_dir)
         .await?
         .into_iter()
-        .find(|theme| theme.config.meta.repo == repo_url);
+        .find(|theme| theme.config.meta.get_id() == *theme_id);
 
     return Ok(theme);
 }

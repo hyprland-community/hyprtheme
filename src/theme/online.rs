@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use expanduser::expanduser;
@@ -11,10 +11,8 @@ use crate::consts::DEFAULT_DOWNLOAD_PATH;
 
 use super::{
     helper::is_theme_installed,
-    installed,
     saved::{self, SavedTheme},
 };
-
 
 // Contains the code to interact with featured themes
 // in the Hyprtheme repo
@@ -51,9 +49,6 @@ impl OnlineTheme {
             .context("Failure when locating saved theme")?
             .is_some())
     }
-
-    // TODO maybe open the theme in the browser
-    // fn open_repo(&self) -> () {}
 }
 
 pub async fn fetch_themes(themes_json_url: Option<&str>) -> Result<Vec<OnlineTheme>> {
@@ -83,18 +78,16 @@ pub async fn download(
     branch: Option<&str>,
     data_dir: Option<&PathBuf>,
 ) -> Result<SavedTheme> {
-    // We need to first download the repo, before we can parse its config
     let url = Url::parse(&git_url).context("Invalid git URL passed")?;
-    let dir_name = format!("{}{}", url.host().unwrap_or(""), url.path()) 
-    // url
-    //     .path()
-    //     .split("/")
-    //     .last()
-        .expect("Invalid Git URL passed");
-    
-    // TODO first clone into /tmp/
-    // then get the name with the branch
-    // How to prevent conflicting folder names?
+    // To avoid name conflicts, we use the host + the repo path, as there could be themes with the same author and theme name on different Git hosts.
+    let dir_name = format!(
+        "{}-{}{}",
+        url.host()
+            .map(|host| host.to_string())
+            .unwrap_or("".to_string()),
+        url.path(),
+        branch.map(|b| format!("-{}", b)).unwrap_or("".to_string())
+    );
 
     // clone repo
     let clone_path = expanduser(

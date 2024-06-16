@@ -1,9 +1,8 @@
 use super::helper::parse_path;
-use crate::theme::{self, create_theme_id, installed, online, saved, ThemeId};
+use crate::theme::{create_theme_id, installed, online, saved, ThemeId};
 use anyhow::{Context, Result};
 use clap::Parser;
-use std::{any::Any, collections::HashMap, future::Future, path::PathBuf, vec};
-
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Parser)]
 pub struct List {
@@ -32,9 +31,9 @@ impl List {
                     installed: true,
                     saved: false,
                     featured: false,
-                    name: theme.meta.name.clone(),
-                    repo: theme.meta.repo.clone(),
-                    branch: theme.meta.branch.clone(),
+                    name: theme.config.meta.name.clone(),
+                    repo: theme.config.meta.repo.clone(),
+                    branch: theme.config.meta.branch.clone(),
                 });
 
         let saved_themes: Vec<Item> = saved::get_all(Some(&self.data_dir))

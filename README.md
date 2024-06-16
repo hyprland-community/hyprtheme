@@ -1,8 +1,8 @@
 # Hyprtheme
 
-works with themes installed at `~/.config/hypr/themes`
+works with themes installed at `~/.local/share/hyprtheme/themes`
 
-additional themes can be installed from [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo)
+additional themes can be installed from [hyprland-community/theme-repo](https://github.com/hyprland-community/theme-repo) or from other repositories.
 
 <hr>
 
@@ -14,13 +14,16 @@ additional themes can be installed from [hyprland-community/theme-repo](https://
 - enable/disable themes
 - passes a `$<theme-name>` variable to enabled themes that contains the path to theme directory
 
-
 ## Wiki
+
 ~~https://github.com/hyprland-community/theme-repo/wiki~~ may be outdated
 
 ## Dependencies
+
 Arch:
- - rust
+
+- rust
+
 ```
 sudo pacman -S rust
 ```
@@ -28,6 +31,7 @@ sudo pacman -S rust
 ## Install
 
 > from git
+
 ```
 git clone https://github.com/hyprland-community/hyprtheme
 cd hyprtheme
@@ -40,15 +44,11 @@ https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-
 
 > a waybar button that switches active theme using hyprtheme
 
-
 ## Todo
 
-- [x] better cli
-- [x] async requests
-- [ ] handle dependancies for themes
-- [ ] aur pkg
+- [ ] install dependencies for themes
 - [ ] control value of variables in theme
 - [ ] control which components to enable in theme
-- [x] cleanup script
-- [x] ~~allow including programs to kill~~
-
+- [ ] aur pkg
+- [ ] JSON for List command
+- [ ] Support old format

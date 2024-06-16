@@ -2,7 +2,7 @@ mod cli;
 use crate::cli::commands::ThemeName;
 mod consts;
 mod theme;
-use clap::{builder::Str, Parser};
+use clap::Parser;
 use cli::commands::CliCommands;
 use std::process::ExitCode;
 use theme::{installed, online, saved};
@@ -90,7 +90,7 @@ async fn main() -> ExitCode {
 
             println!(
                 "Installed theme {} to {}\n",
-                &installed_theme.meta.name,
+                &installed_theme.config.meta.name,
                 &arguments.hypr_dir.display()
             );
         }
@@ -101,10 +101,11 @@ async fn main() -> ExitCode {
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found");
 
-            let name = &installed_theme.meta.name.clone();
+            let name = &installed_theme.config.meta.name.clone();
 
             installed_theme
                 .uninstall(Some(&arguments.hypr_dir))
+                .await
                 .expect("Failed to uninstall theme");
 
             println!("Succesfully uninstalled theme: {}", &name);
@@ -121,7 +122,7 @@ async fn main() -> ExitCode {
 
             println!(
                 "Succesfully updated installed theme: {}",
-                &installed_theme.meta.name
+                &installed_theme.config.meta.name
             );
         }
 
@@ -173,63 +174,3 @@ async fn main() -> ExitCode {
 
     return ExitCode::SUCCESS;
 }
-
-// async fn install_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
-//     let theme = match repo::find_theme(&theme, &theme_dir).await {
-//         Ok(theme) => theme,
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     };
-//     println!("found {}", theme);
-
-//     match theme.install(Some(theme_dir)) {
-//         Ok(_) => println!("\ninstalled"),
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     }
-//     ExitCode::SUCCESS
-// }
-
-// async fn uninstall_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
-//     let theme = match repo::find_theme(&theme, &theme_dir).await {
-//         Ok(theme) => theme,
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     };
-//     println!("found {}", theme);
-
-//     match theme.uninstall(Some(theme_dir)) {
-//         Ok(_) => println!("\nuninstalled"),
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     }
-//     ExitCode::SUCCESS
-// }
-
-// async fn update_theme(theme: String, theme_dir: PathBuf) -> ExitCode {
-//     let theme = match repo::find_theme(&theme, &theme_dir).await {
-//         Ok(theme) => theme,
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     };
-//     println!("found {}", theme);
-
-//     match theme.update() {
-//         Ok(_) => println!("\nupdated"),
-//         Err(e) => {
-//             eprintln!("{}", e);
-//             return ExitCode::FAILURE;
-//         }
-//     }
-//     ExitCode::SUCCESS
-// }

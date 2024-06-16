@@ -3,7 +3,7 @@ version = 0.2
 [theme]
 name    = "testing_plz"
 desc    = "Testing, 'Attention, please'"
-version = "0.1"
+version = "2.0"
 author  = "VDawg"
 repo    = "https://github.com/taylor85345/neon-hyprland-theme"
 
@@ -17,7 +17,7 @@ location = ".config/hypr/"
 
 # Either a tagged release, or Git
 # TODO: implement this version check
-min_version = "0.4.0"
+minimum_hyprland_version = "0.4.0"
 
 
 # The hyprtheme.toml is always in the root of the repo
@@ -37,9 +37,6 @@ to = '~/.config/'
 ignore = ['']
 # Include files which got ignored or are ignored by default
 include = []
-# Define how to move files from a to b.
-# Not sure how to do it in a nice way though
-# manual_moves = []
 
 
 [lifetime]
@@ -77,6 +74,3 @@ dependencies = [
     "socat",
     "geticons",
 ]
-
-# Thoughts
-# - I am hungry

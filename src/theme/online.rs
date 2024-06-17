@@ -68,7 +68,9 @@ pub async fn download(
             .unwrap_or("".to_string()),
         url.path(),
         branch.map(|b| format!("-{}", b)).unwrap_or("".to_string())
-    );
+    )
+    .replace("/", ".")
+    .replace("\\", ".");
 
     // clone repo
     let clone_path = expanduser(

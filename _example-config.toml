@@ -1,11 +1,10 @@
 version = 0.2
 
 [theme]
-name    = "testing_plz"
-desc    = "Testing, 'Attention, please'"
-version = "2.0"
-author  = "VDawg"
-repo    = "https://github.com/taylor85345/neon-hyprland-theme"
+name   = "testing_plz"
+desc   = "Testing, 'Attention, please'"
+author = "VDawg"
+repo   = "https://github.com/hyprland-community/_hyprtheme-theme-wip"
 
 [hypr]
 # The `hypr` config directory in the theme. 
@@ -61,16 +60,4 @@ description = """Open up apps on workspaces automatically.
 Music is on workspace 9. Browser: 2."""
 
 [misc]
-dependencies = [
-    "hyprland-git",
-    "eww",
-    "nerd-fonts-mononoki",
-    "nerd-fonts-jetbrains-mono",
-    "rofi-wayland",
-    "dunst",
-    "trayer",
-    "swww",
-    "macchina",
-    "socat",
-    "geticons",
-]
+dependencies = ["hyprland-git"]

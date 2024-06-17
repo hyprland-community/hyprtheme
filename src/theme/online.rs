@@ -26,28 +26,6 @@ pub struct OnlineTheme {
     pub images: Vec<String>,
 }
 
-// impl OnlineTheme {
-// pub async fn download(&self, data_dir: Option<&PathBuf>) -> Result<SavedTheme> {
-//     download(&self.repo, self.branch.as_deref(), data_dir).await
-// }
-
-// pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
-//     is_theme_installed(&self.get_id(), config_dir).await
-// }
-
-// /// Compute the id of the theme. Used to compare it with saved themes
-// pub fn get_id(&self) -> ThemeId {
-//     create_theme_id(&self.repo, self.branch.as_deref())
-// }
-
-// pub async fn is_saved(&self, data_dir: Option<&PathBuf>) -> Result<bool> {
-//     Ok(saved::find_saved(&self.get_id(), data_dir)
-//         .await
-//         .context("Failure when locating saved theme")?
-//         .is_some())
-// }
-// }
-
 pub async fn fetch_themes(themes_json_url: Option<&str>) -> Result<Vec<OnlineTheme>> {
     let client = Client::new();
     let url = themes_json_url.unwrap_or(
@@ -129,3 +107,25 @@ pub async fn download(
     // parse hyprtheme.toml
     saved::from_directory(&clone_path).await
 }
+
+// impl OnlineTheme {
+// pub async fn download(&self, data_dir: Option<&PathBuf>) -> Result<SavedTheme> {
+//     download(&self.repo, self.branch.as_deref(), data_dir).await
+// }
+
+// pub async fn is_installed(&self, config_dir: Option<&PathBuf>) -> Result<bool> {
+//     is_theme_installed(&self.get_id(), config_dir).await
+// }
+
+// /// Compute the id of the theme. Used to compare it with saved themes
+// pub fn get_id(&self) -> ThemeId {
+//     create_theme_id(&self.repo, self.branch.as_deref())
+// }
+
+// pub async fn is_saved(&self, data_dir: Option<&PathBuf>) -> Result<bool> {
+//     Ok(saved::find_saved(&self.get_id(), data_dir)
+//         .await
+//         .context("Failure when locating saved theme")?
+//         .is_some())
+// }
+// }

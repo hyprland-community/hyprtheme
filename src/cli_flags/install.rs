@@ -52,7 +52,7 @@ impl InstallArgs {
                         url: theme.repo,
                         branch: theme.branch,
                     })
-                    .expect("Failed to find theme by provided name.");
+                    .expect(format!("Tried to fetch theme {} from featured themes, but could not find it. \nSee https://hyprland-community.org/hyprtheme/browse for all featured themes.", &theme ).as_str());
 
                 GitUrlBranch {
                     url: found_theme.url,

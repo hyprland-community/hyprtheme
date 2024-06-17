@@ -40,7 +40,7 @@ impl InstallArgs {
                 // There doesn't seem to be a way to determine if a featured theme is already installed
                 // only by it's name, as themes from other repos can have the same name
 
-                // TODO we need to ban featured themes with the same names or handle this case
+                // TODO we need to ban featured themes with the same names or handle this case with a prompt again
 
                 let found_theme = online::find_featured(&theme)
                     .await

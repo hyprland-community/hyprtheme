@@ -70,7 +70,6 @@ impl SavedTheme {
         create_theme_id(&self.config.meta.repo, self.config.meta.branch.as_deref())
     }
 
-    /// hypr_config_dir is the absolute path
     async fn setup_dots(&self, install_dir: &PathBuf) -> Result<()> {
         let _ = self.copy_general_dots()?;
         let _ = self.setup_hyprtheme_hypr_dots(&install_dir)?;
@@ -367,6 +366,7 @@ fn get_theme_toml_path(theme_dir: &PathBuf) -> Result<PathBuf> {
     ))
 }
 
+/// Add variables.conf and source it in the hypr directory
 fn setup_theme_variables(hypr_dir: &PathBuf) -> Result<()> {
     let hyprland_config_path = &hypr_dir.join("hyprland.conf");
 

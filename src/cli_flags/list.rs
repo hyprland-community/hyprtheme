@@ -17,9 +17,7 @@ pub struct List {
     /// The path to the the Hyprtheme data directory
     #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
     pub data_dir: PathBuf,
-    //
-    // TODO
-    // pub as_json: bool,
+    // TODO add as_json: bool,
 }
 
 impl List {

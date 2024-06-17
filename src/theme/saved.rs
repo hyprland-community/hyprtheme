@@ -1,3 +1,4 @@
+use super::create_theme_id;
 use super::helper::{
     create_hyrptheme_source_string, create_source_string, is_theme_installed, prepend_to_file,
     ThemeId,
@@ -63,6 +64,10 @@ impl SavedTheme {
                 hypr_dir.display()
             ))),
         };
+    }
+
+    pub fn get_id(&self) -> ThemeId {
+        create_theme_id(&self.config.meta.repo, self.config.meta.branch.as_deref())
     }
 
     /// hypr_config_dir is the absolute path

@@ -98,7 +98,7 @@ impl InstallArgs {
 }
 
 #[derive(Clone)]
-enum ThemeName {
+pub enum ThemeName {
     /// Name of a theme featured on the Hyprtheme website
     Featured(String),
     /// Repository of a theme, like: git@github.com:hyprland-community/hyprtheme.git

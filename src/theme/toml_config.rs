@@ -39,7 +39,7 @@ impl ThemeMeta {
 }
 
 #[derive(Debug, Deserialize)]
-struct HyprConfig {
+pub struct HyprConfig {
     /// Relative path to the Hyprland config directory in the theme repository
     pub location: PathBuf,
     /// Minimum required Hyprland version. Either a semver-string for a tagged release or 'git' for the latest git version.
@@ -49,7 +49,7 @@ struct HyprConfig {
 
 /// Configuration on how to move dot files to their locations
 #[derive(Debug, Deserialize)]
-struct DotsDirectoryConfig {
+pub struct DotsDirectoryConfig {
     /// What to copy relative from the root of the repository
     pub from: PathBuf,
 
@@ -84,15 +84,15 @@ pub struct LifeTimeConfig {
 /// Data for an optional extra configurations, like an optional workspaces setup
 /// User can install them or not
 #[derive(Debug, Deserialize)]
-struct ExtraConfig {
+pub struct ExtraConfig {
     /// The name of the extra configuration.
     ///
     /// For example: `workspaces` (theme author also provides his own workspace setup, which might interfer with the users one)
-    name: String,
+    pub name: String,
 
     /// Path to the hyprlang `<extra_config>.conf` which will, if selected by the user, sourced by hyprtheme.conf
-    path: String,
+    pub path: String,
 
     /// Gets displayed to the user. Describes what this is
-    description: Option<String>,
+    pub description: Option<String>,
 }

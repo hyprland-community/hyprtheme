@@ -26,7 +26,7 @@ pub fn create_source_string(file_path: &PathBuf, hypr_dir: &PathBuf) -> String {
 /// A branded string type to prevent passing any string where a theme id is expected.
 ///
 /// A theme id is nessecary as different themes can have the same name and even author as they can be hosted on different git hosts.
-#[derive(Hash, PartialEq, Eq)]
+#[derive(Hash, PartialEq, Eq, Default, Clone)]
 pub struct ThemeId(String);
 
 pub fn create_theme_id(repo: &str, branch: Option<&str>) -> ThemeId {

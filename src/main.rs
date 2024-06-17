@@ -2,14 +2,17 @@ mod cli_flags;
 mod consts;
 mod theme;
 use clap::Parser;
-use cli_flags::flags::CliCommands;
+use cli_flags::flags::CliFlags;
 use std::process::ExitCode;
-use theme::{installed, saved};
+use theme::{
+    installed,
+    saved::{self},
+};
 
 #[tokio::main]
 async fn main() -> ExitCode {
-    match CliCommands::parse() {
-        CliCommands::List(arguments) => {
+    match CliFlags::parse() {
+        CliFlags::List(arguments) => {
             println!(
                 "{}",
                 arguments
@@ -19,7 +22,7 @@ async fn main() -> ExitCode {
             );
         }
 
-        CliCommands::Install(arguments) => {
+        CliFlags::Install(arguments) => {
             let installed_theme = arguments.install().await;
 
             match installed_theme {
@@ -40,7 +43,7 @@ async fn main() -> ExitCode {
             }
         }
 
-        CliCommands::Uninstall(arguments) => {
+        CliFlags::Uninstall(arguments) => {
             let installed_theme = installed::get(Some(&arguments.hypr_dir))
                 .await
                 .expect("Error retrieving installed theme")
@@ -56,7 +59,7 @@ async fn main() -> ExitCode {
             println!("Succesfully uninstalled theme: {}", &name);
         }
 
-        CliCommands::Update(arguments) => {
+        CliFlags::Update(arguments) => {
             let installed_theme = installed::get(Some(&arguments.hypr_dir))
                 .await
                 .expect("Error retrieving installed theme")
@@ -71,34 +74,9 @@ async fn main() -> ExitCode {
             );
         }
 
-        // Takes in a theme id,
-        // as otherwise we won't be able to tell which Gruvbox Theme should be uninstalled,
-        // if there are three with the same name, author but hosted on different platforms
-        CliCommands::Remove(arguments) => {
-            // TODO
-            // So this is another problem
-            // Let's say we have 3 themes installed.
-            // One from Github, then Gitlab and some self-hosted thingy
-            // All are called Gruvbox and are from different users, all called Foo.
-            // Now we want to remove Gruvbox.
-            // Which one do we remove?
-            // The one from Gitlab?
-            // The one from Github?
-            // The one from self-hosted?
-            //
-            // We need to have an easy to write ID, so that the user can delete this theme
-            // Also we need to list the ID on list, too
-            saved::find_saved(&arguments.theme_name, Some(&arguments.data_dir))
-                .await
-                .expect("Failed to lookup saved themes.")
-                .expect("Could not find specified saved theme.")
-                .remove()
-                .expect("Failed to remove specified theme.");
+        CliFlags::Remove(arguments) => arguments.remove().await.expect("Failed to remove theme"),
 
-            println!("Succesfully removed theme  {}", &arguments.theme_name);
-        }
-
-        CliCommands::Clean(arguments) => {
+        CliFlags::Clean(arguments) => {
             let themes = saved::get_all(Some(&arguments.data_dir))
                 .await
                 .expect("Failed to lookup saved themes.");
@@ -120,7 +98,7 @@ async fn main() -> ExitCode {
             println!("Succesfully clean unused themes.");
         }
 
-        CliCommands::UpdateAll(arguments) => {
+        CliFlags::UpdateAll(arguments) => {
             let themes = saved::get_all(Some(&arguments.data_dir))
                 .await
                 .expect("Failed to lookup saved themes.");

@@ -1,10 +1,10 @@
-use super::{helper::parse_path, install::InstallArgs, list};
+use super::{helper::parse_path, install::InstallArgs, list, remove::RemoveArgs};
 use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
-pub enum CliCommands {
+pub enum CliFlags {
     /// List all saved themes
     /// and all featured on the official Hyprtheme site
     List(list::List),
@@ -33,17 +33,6 @@ pub enum CliCommands {
 
     /// Removes all saved themes, excluding the currently installed one
     Clean(CleanAllArgs),
-}
-
-#[derive(Parser)]
-pub struct RemoveArgs {
-    /// The name of the theme to remove from the data directory
-    #[arg(short, long)]
-    pub theme_name: String,
-
-    /// The data directory of Hyprtheme, by default in `~/.local/share/hyprtheme/`
-    #[arg(short, long, default_value = "~/.local/share/hyprtheme",value_parser=parse_path)]
-    pub data_dir: PathBuf,
 }
 
 #[derive(Parser)]

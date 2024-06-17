@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::Parser;
 use fancy_regex::RegexBuilder;
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(Parser)]
 pub struct InstallArgs {
@@ -127,12 +128,7 @@ impl ThemeName {
             return Ok(Self::Github((name.to_owned(), repo.to_owned())));
         }
 
-        let git_repo_regex = RegexBuilder::new(
-            r"^((git|ssh|http(s)?)|(git@[\w\.-]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?$/i",
-        )
-        .build()
-        .unwrap();
-        if git_repo_regex.is_match(string)? {
+        if Url::parse(string).is_ok() {
             return Ok(Self::Git(string.to_owned()));
         }
 

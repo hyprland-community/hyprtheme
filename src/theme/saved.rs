@@ -322,7 +322,8 @@ pub async fn find_saved(
     data_dir: Option<&PathBuf>,
 ) -> Result<Option<SavedTheme>> {
     let theme = get_all(data_dir)
-        .await?
+        .await
+        .context("Failed to retrieve saved themes (find_saved).")?
         .into_iter()
         .find(|theme| theme.config.meta.get_id() == *theme_id);
 

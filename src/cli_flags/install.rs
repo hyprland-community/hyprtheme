@@ -1,8 +1,11 @@
 use super::helper::parse_path;
-use crate::theme::{self, create_theme_id, installed::InstalledTheme, online, saved};
+use crate::{
+    consts,
+    theme::{self, create_theme_id, installed::InstalledTheme, online, saved},
+};
 use anyhow::Result;
 use clap::Parser;
-use regex::RegexBuilder;
+use fancy_regex::RegexBuilder;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -20,11 +23,11 @@ pub struct InstallArgs {
 
     /// The data directory of Hyprtheme by default "~/.local/share/hyprtheme/"
     /// The theme will be saved in the sub-directory "themes"
-    #[arg(short,long,default_value="~/.local/share/hyprtheme/",value_parser=parse_path)]
+    #[arg(short,long,default_value=consts::DEFAULT_DOWNLOAD_PATH,value_parser=parse_path)]
     pub data_dir: PathBuf,
 
     /// The path to the the Hyprland config directory, where the theme will be installed to.
-    #[arg(long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 }
 
@@ -112,12 +115,11 @@ pub enum ThemeName {
 impl ThemeName {
     pub fn parse(string: &str) -> Result<Self> {
         let github_regex = RegexBuilder::new(
-            r"^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}\/[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$",
+            r"^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}\/[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$/i",
         )
-        .case_insensitive(true)
         .build()
         .unwrap();
-        if github_regex.is_match(string) {
+        if github_regex.is_match(string)? {
             let (name, repo) = string
                 .split_once("/")
                 .expect("Git repo regex failed. Could not split at /");
@@ -126,12 +128,11 @@ impl ThemeName {
         }
 
         let git_repo_regex = RegexBuilder::new(
-            r"^((git|ssh|http(s)?)|(git@[\w\.-]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?$",
+            r"^((git|ssh|http(s)?)|(git@[\w\.-]+))(:(//)?)([\w\.@\:/\-~]+)(\.git)(/)?$/i",
         )
-        .case_insensitive(true)
         .build()
         .unwrap();
-        if git_repo_regex.is_match(string) {
+        if git_repo_regex.is_match(string)? {
             return Ok(Self::Git(string.to_owned()));
         }
 

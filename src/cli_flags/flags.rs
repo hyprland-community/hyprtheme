@@ -1,3 +1,5 @@
+use crate::consts;
+
 use super::{helper::parse_path, install::InstallArgs, list, remove::RemoveArgs};
 use clap::Parser;
 use std::path::PathBuf;
@@ -37,28 +39,28 @@ pub enum CliFlags {
 
 #[derive(Parser)]
 pub struct UninstallArgs {
-    #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    #[arg(short,long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct UpdateArgs {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
-    #[arg(long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 
     /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
-    #[arg(short, long, default_value = "~/.local/share/hyprtheme/themes")]
+    #[arg(short, long, default_value=consts::DEFAULT_DOWNLOAD_PATH)]
     pub data_dir: PathBuf,
 }
 
 #[derive(Parser)]
 pub struct CleanAllArgs {
     /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
-    #[arg(short,long,default_value="~/.local/share/hyprtheme/themes",value_parser=parse_path)]
+    #[arg(short,long,default_value=consts::DEFAULT_DOWNLOAD_PATH,value_parser=parse_path)]
     pub data_dir: PathBuf,
 
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
-    #[arg(long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 }

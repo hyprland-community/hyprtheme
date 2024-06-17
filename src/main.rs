@@ -3,7 +3,7 @@ mod consts;
 mod theme;
 use clap::Parser;
 use cli_flags::flags::CliFlags;
-use std::process::ExitCode;
+use std::{fs, process::ExitCode};
 use theme::{
     installed,
     saved::{self},
@@ -11,6 +11,14 @@ use theme::{
 
 #[tokio::main]
 async fn main() -> ExitCode {
+    // Ensure default directories exist
+    let _ = fs::create_dir_all(consts::DEFAULT_DOWNLOAD_PATH)
+        .expect("Failed to create default download directory.");
+    let _ = fs::create_dir_all(consts::DEFAULT_HYPR_CONFIG_PATH).expect(
+        "
+    Failed to create default hypr config directory.",
+    );
+
     match CliFlags::parse() {
         CliFlags::List(arguments) => {
             println!(

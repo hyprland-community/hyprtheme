@@ -1,5 +1,8 @@
 use super::helper::parse_path;
-use crate::theme::{create_theme_id, installed, online, saved, ThemeId};
+use crate::{
+    consts,
+    theme::{create_theme_id, installed, online, saved, ThemeId},
+};
 use anyhow::{Context, Result};
 use clap::Parser;
 use std::{collections::HashMap, path::PathBuf};
@@ -11,11 +14,11 @@ pub struct List {
     pub featured: bool,
 
     /// The path to the the Hyprland config directory
-    #[arg(long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 
     /// The path to the the Hyprtheme data directory
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    #[arg(short,long,default_value=consts::DEFAULT_DOWNLOAD_PATH,value_parser=parse_path)]
     pub data_dir: PathBuf,
     // TODO add as_json: bool,
 }

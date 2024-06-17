@@ -24,7 +24,7 @@ pub struct InstallArgs {
     pub data_dir: PathBuf,
 
     /// The path to the the Hyprland config directory, where the theme will be installed to.
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    #[arg(long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 }
 

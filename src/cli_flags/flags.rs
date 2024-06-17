@@ -44,7 +44,7 @@ pub struct UninstallArgs {
 #[derive(Parser)]
 pub struct UpdateArgs {
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
-    #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    #[arg(long,default_value="~/.config/hypr/",value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 
     /// Optional: The path to the hyprtheme data directory. By default "~/.local/share/hyprtheme/"
@@ -59,6 +59,6 @@ pub struct CleanAllArgs {
     pub data_dir: PathBuf,
 
     /// Optional: The path to the hyprland config directory. By default "~/.config/hypr/"
-    #[arg(short,long,default_value="~/.config/hypr/",value_parser=parse_path)]
+    #[arg(long,default_value="~/.config/hypr/",value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 }

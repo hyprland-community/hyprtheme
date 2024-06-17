@@ -11,7 +11,7 @@ pub struct List {
     pub featured: bool,
 
     /// The path to the the Hyprland config directory
-    #[arg(short,long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
+    #[arg(long,default_value="~/.config/hypr/themes",value_parser=parse_path)]
     pub hypr_dir: PathBuf,
 
     /// The path to the the Hyprtheme data directory

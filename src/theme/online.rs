@@ -62,12 +62,12 @@ pub async fn download(
     let url = Url::parse(&git_url).context("Invalid git URL passed")?;
     // To avoid name conflicts, we use the host + the repo path, as there could be themes with the same author and theme name on different Git hosts.
     let dir_name = format!(
-        "{}-{}{}",
+        "{}{}{}",
         url.host()
             .map(|host| host.to_string())
             .unwrap_or("".to_string()),
         url.path(),
-        branch.map(|b| format!("-{}", b)).unwrap_or("".to_string())
+        branch.map(|b| format!(".{}", b)).unwrap_or("".to_string())
     )
     .replace("/", ".")
     .replace("\\", ".");

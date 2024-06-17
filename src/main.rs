@@ -1,8 +1,8 @@
-mod cli;
+mod cli_flags;
 mod consts;
 mod theme;
 use clap::Parser;
-use cli::commands::CliCommands;
+use cli_flags::flags::CliCommands;
 use std::process::ExitCode;
 use theme::{installed, saved};
 

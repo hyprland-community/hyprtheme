@@ -1,20 +1,16 @@
-use std::path::PathBuf;
-
-use anyhow::{Context, Result};
-use expanduser::expanduser;
-use reqwest::Client;
-
-use serde::Deserialize;
-use url::Url;
-
-use crate::consts::DEFAULT_DOWNLOAD_PATH;
-
 use super::{
     create_theme_id,
     helper::is_theme_installed,
     saved::{self, SavedTheme},
     ThemeId,
 };
+use crate::consts::DEFAULT_DOWNLOAD_PATH;
+use anyhow::{Context, Result};
+use expanduser::expanduser;
+use reqwest::Client;
+use serde::Deserialize;
+use std::path::PathBuf;
+use url::Url;
 
 // Contains the code to interact with featured themes
 // in the Hyprtheme repo

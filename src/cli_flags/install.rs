@@ -1,11 +1,9 @@
+use super::helper::parse_path;
+use crate::theme::{self, create_theme_id, installed::InstalledTheme, online, saved};
 use anyhow::Result;
 use clap::Parser;
 use regex::RegexBuilder;
 use std::path::PathBuf;
-
-use crate::theme::{self, create_theme_id, installed::InstalledTheme, online, saved};
-
-use super::helper::parse_path;
 
 #[derive(Parser)]
 pub struct InstallArgs {

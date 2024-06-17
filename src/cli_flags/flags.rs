@@ -1,7 +1,6 @@
+use super::{helper::parse_path, install::InstallArgs, list};
 use clap::Parser;
 use std::path::PathBuf;
-
-use super::{helper::parse_path, install::InstallArgs, list};
 
 #[derive(Parser)]
 #[command(version, name = "hyprtheme")]
@@ -34,10 +33,6 @@ pub enum CliCommands {
 
     /// Removes all saved themes, excluding the currently installed one
     Clean(CleanAllArgs),
-    // Uri(Uri),
-    // Enable(Enable),
-    // Disable(Disable),
-    // Init,
 }
 
 #[derive(Parser)]

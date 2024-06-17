@@ -1,10 +1,9 @@
-use crate::consts::DEFAULT_HYPR_CONFIG_PATH;
-
 use super::{
     helper::create_hyrptheme_source_string,
     online,
     saved::{self, ParsedThemeConfig},
 };
+use crate::consts::DEFAULT_HYPR_CONFIG_PATH;
 use anyhow::{Context, Result};
 use expanduser::expanduser;
 use std::{

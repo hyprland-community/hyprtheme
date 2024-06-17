@@ -1,7 +1,8 @@
 use super::helper::{
-    create_hyrptheme_source_string, create_source_string, create_theme_id, is_theme_installed,
-    prepend_to_file, ThemeId,
+    create_hyrptheme_source_string, create_source_string, is_theme_installed, prepend_to_file,
+    ThemeId,
 };
+use super::toml_config::ParsedThemeConfig;
 use super::{installed, installed::InstalledTheme};
 use crate::consts::{DEFAULT_DOWNLOAD_PATH, DEFAULT_HYPR_CONFIG_PATH};
 use anyhow::{anyhow, Context, Ok, Result};
@@ -28,21 +29,6 @@ pub struct SavedTheme {
 
     /// Parsed theme config
     pub config: ParsedThemeConfig,
-}
-
-/// Parsed theme config, does not have computed properties yet
-///
-/// For that see the Theme struct
-#[derive(Deserialize, Debug)]
-pub struct ParsedThemeConfig {
-    pub meta: ThemeMeta,
-    hypr: HyprConfig,
-    dots: Vec<DotsDirectoryConfig>,
-    pub lifetime: LifeTimeConfig,
-    // TODO install extra configs
-    extra_configs: Vec<ExtraConfig>,
-    // TODO install dependencies
-    dependencies: Vec<String>,
 }
 
 impl SavedTheme {
@@ -400,84 +386,4 @@ fn setup_theme_variables(hypr_dir: &PathBuf) -> Result<()> {
     }
 
     Ok(())
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ThemeMeta {
-    pub name: String,
-    pub description: String,
-    /// The version of the theme
-    pub version: String,
-    pub author: String,
-    /// Git repository of the theme
-    pub repo: String,
-    /// The path to the Hyprland config directory
-    pub hypr_directory: PathBuf,
-    /// Git Branch of the theme repository
-    pub branch: Option<String>,
-}
-
-impl ThemeMeta {
-    pub fn get_id(&self) -> ThemeId {
-        create_theme_id(&self.repo, self.branch.as_deref())
-    }
-}
-
-#[derive(Debug, Deserialize)]
-struct HyprConfig {
-    /// Relative path to the Hyprland config directory in the theme repository
-    location: PathBuf,
-    /// Minimum required Hyprland version. Either a semver-string for a tagged release or 'git' for the latest git version.
-    // TODO implement version check
-    minimum_hyprland_version: String,
-}
-
-/// Configuration on how to move dot files to their locations
-#[derive(Debug, Deserialize)]
-struct DotsDirectoryConfig {
-    /// What to copy relative from the root of the repository
-    from: PathBuf,
-
-    /// The destination.
-    ///
-    /// If not specified it will be `to_copy` appended with `~/`
-    to: Option<String>,
-
-    // TODO: Parse this as Vec<Glob> and err if they are not valid globs
-    /// Which dirs and files to ignore. Useful to ignore your own installer for example.
-    /// By default `[ ".hyprtheme/", "./*\.[md|]", "LICENSE", ".git*" ]` is always ignored
-    /// You can ignore everything with ['**/*'] and only `include` the dirs/files which you want
-    ignore: Vec<String>,
-
-    // TODO: Parse this as Vec<Glob> and err if they are not valid globs
-    /// Regex strings
-    include: Vec<String>,
-}
-
-/// Setup and cleanup script paths. If not set, uses default values
-#[derive(Debug, Deserialize)]
-pub struct LifeTimeConfig {
-    /// Gets run after the theme got installed. Usually to restart changed apps
-    /// Default path: .hyprtheme/setup.sh - If found it will run it, even if not specified
-    pub setup: String,
-
-    /// Gets run after the theme got uninstalled. Usually to kill started apps
-    /// Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
-    pub cleanup: String,
-}
-
-/// Data for an optional extra configurations, like an optional workspaces setup
-/// User can install them or not
-#[derive(Debug, Deserialize)]
-struct ExtraConfig {
-    /// The name of the extra configuration.
-    ///
-    /// For example: `workspaces` (theme author also provides his own workspace setup, which might interfer with the users one)
-    name: String,
-
-    /// Path to the hyprlang `<extra_config>.conf` which will, if selected by the user, sourced by hyprtheme.conf
-    path: String,
-
-    /// Gets displayed to the user. Describes what this is
-    description: Option<String>,
 }

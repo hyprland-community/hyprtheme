@@ -1,7 +1,5 @@
 use super::{
-    helper::create_hyrptheme_source_string,
-    online,
-    saved::{self, ParsedThemeConfig},
+    helper::create_hyrptheme_source_string, online, saved, toml_config::ParsedThemeConfig,
 };
 use crate::consts::DEFAULT_HYPR_CONFIG_PATH;
 use anyhow::{Context, Result};

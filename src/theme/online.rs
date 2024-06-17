@@ -72,42 +72,53 @@ pub async fn download(
     .replace("/", ".")
     .replace("\\", ".");
 
+    println!("Whut is this dir_name: {}", dir_name.clone());
+
     // clone repo
-    let clone_path = expanduser(
+    let themes_dir = expanduser(
         data_dir
-            .map(|path| path.to_str().unwrap())
+            .map(|path| {
+                path.to_str()
+                    .expect("Data directory contains invalid characters")
+            })
             .unwrap_or(DEFAULT_DOWNLOAD_PATH),
     )
     .context(format!(
         "Failed to expand default download path: {}",
         DEFAULT_DOWNLOAD_PATH
     ))?
-    .join(dir_name);
+    .join("themes/");
 
-    let clone_path_string = &clone_path.to_str().context(format!(
+    let themes_dir_string = &themes_dir.to_str().context(format!(
         "Download path {} contains non-unicode characters.",
-        &clone_path.display()
+        &themes_dir.display()
     ))?;
+    let theme_dir = themes_dir.join(&dir_name);
+
+    println!("Whut is this themes_dir: {}", themes_dir_string);
 
     let clone_cmd = format!(
-        "mkdir -p {} && cd {} && git clone --depth 1 {} {}",
-        clone_path_string,
-        clone_path_string,
+        "mkdir -p {} && git clone --depth 1 {} {} {}",
+        themes_dir_string,
         branch
             .map(|branch_name| "--branch ".to_owned() + branch_name)
             .unwrap_or("".to_owned()),
-        git_url
+        git_url,
+        &dir_name
     );
+
+    println!("Whut is this clone_cmd: {}", clone_cmd);
 
     std::process::Command::new("sh")
         .arg("-c")
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
+        .current_dir(&themes_dir)
         .arg(&clone_cmd)
         .output()?;
 
     // parse hyprtheme.toml
-    saved::from_directory(&clone_path).await
+    saved::from_directory(&theme_dir).await
 }
 
 // impl OnlineTheme {

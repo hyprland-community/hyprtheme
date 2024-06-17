@@ -9,12 +9,20 @@ use std::path::PathBuf;
 pub struct ParsedThemeConfig {
     pub meta: ThemeMeta,
     pub hypr: HyprConfig,
+    // Let's make this optional, for people who only use scripts to setup their dots
+    // Not optimal, but we don't have to feature those
+    // TODO warn if dots is empty
+    #[serde(default)]
     pub dots: Vec<DotsDirectoryConfig>,
-    pub lifetime: LifeTimeConfig,
+    pub lifetime: Option<LifeTimeConfig>,
     // TODO install extra configs
+    #[serde(default)]
     pub extra_configs: Vec<ExtraConfig>,
     // TODO install dependencies
+    #[serde(default)]
     pub dependencies: Vec<String>,
+    /// The version of the hyprtheme.toml format
+    pub version: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -26,8 +34,6 @@ pub struct ThemeMeta {
     pub author: String,
     /// Git repository of the theme
     pub repo: String,
-    /// The path to the Hyprland config directory
-    pub hypr_directory: PathBuf,
     /// Git Branch of the theme repository
     pub branch: Option<String>,
 }
@@ -74,11 +80,11 @@ pub struct DotsDirectoryConfig {
 pub struct LifeTimeConfig {
     /// Gets run after the theme got installed. Usually to restart changed apps
     /// Default path: .hyprtheme/setup.sh - If found it will run it, even if not specified
-    pub setup: String,
+    pub setup: Option<String>,
 
     /// Gets run after the theme got uninstalled. Usually to kill started apps
     /// Default path: .hyprtheme/cleanup.sh - If found it will run it, even if not specified
-    pub cleanup: String,
+    pub cleanup: Option<String>,
 }
 
 /// Data for an optional extra configurations, like an optional workspaces setup

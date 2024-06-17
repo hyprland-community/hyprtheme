@@ -35,8 +35,6 @@ pub struct SavedTheme {
 impl SavedTheme {
     /// Has an optional `data_dir` argument, which by default is `~/.local/share/hyprtheme/themes`
     pub async fn install(&self, hypr_dir: Option<&PathBuf>) -> Result<InstalledTheme> {
-        let meta = &self.config.meta;
-
         let hypr_dir = hypr_dir
             .unwrap_or(&expanduser(&DEFAULT_HYPR_CONFIG_PATH).context(format!(
                 "Failed to expand home directory for the default install path: {}",
@@ -44,11 +42,16 @@ impl SavedTheme {
             ))?)
             .to_path_buf();
 
-        let install_dir = &hypr_dir.join("./hyprtheme/").join(&meta.name);
+        // It might be harder than expected to save themes in ~/.config/hypr/hyprtheme
+        // as the theme .conf files need to get sourced from somewhere,
+        // but putting themes in another dir like ~/.config/hyprtheme/themes should work nicely
+        let install_dir = &hypr_dir.join("hyprtheme/");
+        let _ = fs::create_dir_all(install_dir)
+            .context("Failed to create hyprtheme subdirectory in hypr config direcotry.")?;
 
-        let _ = &self.setup_dots(install_dir).await?;
-        let _ = &self.run_setup_script(install_dir, &hypr_dir).await?;
+        let _ = &self.setup_dots(&hypr_dir, install_dir).await?;
         let _ = setup_theme_variables(&hypr_dir)?;
+        let _ = &self.run_setup_script(install_dir, &hypr_dir).await?;
 
         // Copy over the hyprtheme.toml, which gets used to determine which theme is currently installed
         fs::copy(&self.config_path, &install_dir.join("hyprtheme.toml"))?;
@@ -70,9 +73,9 @@ impl SavedTheme {
         create_theme_id(&self.config.meta.repo, self.config.meta.branch.as_deref())
     }
 
-    async fn setup_dots(&self, install_dir: &PathBuf) -> Result<()> {
+    async fn setup_dots(&self, hypr_dir: &PathBuf, install_dir: &PathBuf) -> Result<()> {
         let _ = self.copy_general_dots()?;
-        let _ = self.setup_hyprtheme_hypr_dots(&install_dir)?;
+        let _ = self.setup_hyprtheme_hypr_dots(&hypr_dir, &install_dir)?;
 
         // TODO  Prompt and install extra configs
 
@@ -80,7 +83,13 @@ impl SavedTheme {
     }
 
     async fn run_setup_script(&self, install_dir: &PathBuf, hypr_dir: &PathBuf) -> Result<()> {
-        let setup_script_path = &self.path.join(&self.config.lifetime.setup);
+        let setup_path_relative = &self
+            .config
+            .lifetime
+            .as_ref()
+            .and_then(|setting| setting.setup.to_owned())
+            .unwrap_or(".hyprtheme/setup.sh".to_string());
+        let setup_script_path = &self.path.join(setup_path_relative);
 
         if !setup_script_path.try_exists()? {
             print!("No setup script found. Skipping...");
@@ -102,22 +111,34 @@ impl SavedTheme {
 
     /// Move the hypr config dir into `~/.config/hypr/hyprtheme`
     /// And then source it
-    fn setup_hyprtheme_hypr_dots(&self, hypr_dir: &PathBuf) -> Result<()> {
-        fs::copy(
-            &self.path.join(&self.config.hypr.location),
-            &hypr_dir.join("hypr/hyprtheme/"),
-        )
-        .context("Failed to copy over hypr config directory")?;
+    fn setup_hyprtheme_hypr_dots(&self, hypr_dir: &PathBuf, install_dir: &PathBuf) -> Result<()> {
+        let from_dir = &self.path.join(&self.config.hypr.location);
+        let copy_options = fs_extra::dir::CopyOptions {
+            overwrite: true,
+            skip_exist: false,
+            ..Default::default()
+        };
+
+        fs_extra::dir::copy(&from_dir, &install_dir, &copy_options).context(format!(
+            "Failed to copy over hypr config directory from {} to {}",
+            from_dir.display(),
+            install_dir.display()
+        ))?;
+
         // Calculate theme source string, like `source=~/.config/hypr/settings.conf`
         // TODO: replace absolute source path with ~ if possible
         // makes config more portable
 
         let hyprland_config_path = &hypr_dir.join("hyprland.conf");
-        let hyprtheme_source_str = create_hyrptheme_source_string(hypr_dir);
+        let hyprtheme_source_str =
+            create_hyrptheme_source_string(&install_dir.join("hyprtheme.conf"));
         // Read out hyprland.conf via std::fs::read_to_string("list.txt").unwrap();
         // Check if hyprtheme.conf is sourced in hyprland.conf, if not, source it
         let is_already_sourced = std::fs::read_to_string(&hyprland_config_path)
-            .context("Failed to read out main hyprtheme.conf")?
+            .context(format!(
+                "Failed to read out main hyprtheme.conf during hyprland dots setup at {}",
+                hyprland_config_path.display()
+            ))?
             .contains(&hyprtheme_source_str);
 
         if !is_already_sourced {
@@ -171,6 +192,18 @@ impl SavedTheme {
             }
             let include_glob = include_glob.build()?;
 
+            let copy_options_dir = fs_extra::dir::CopyOptions {
+                copy_inside: true,
+                overwrite: true,
+                ..Default::default()
+            };
+
+            let copy_options_file = fs_extra::file::CopyOptions {
+                skip_exist: false,
+                overwrite: true,
+                ..Default::default()
+            };
+
             // Get top level folders of to_copy to determine what gets deleted/backed up
             let mut top_level_paths: Vec<(PathBuf, PathBuf)> = Vec::new();
             // Filtered by the globs
@@ -180,7 +213,13 @@ impl SavedTheme {
                 .into_iter()
                 .enumerate()
             {
-                let from_path = entry?.path().to_path_buf();
+                let from_path = entry
+                    .context(format!(
+                        "Invalid file/dir entry in {}",
+                        &root_dots_path.display()
+                    ))?
+                    .path()
+                    .to_path_buf();
                 let from_path_relative = diff_paths(&from_path, &self.path).expect(
                     format!(
                         "Failed to find relative path for dot file:\n{}\n{}",
@@ -219,19 +258,32 @@ impl SavedTheme {
 
             for (from, to) in top_level_paths {
                 // Delete the file/dir which would get overwritten
+                // Do nothing if it does not exist (it's not a file nor dir)
                 if to.is_file() {
-                    fs::remove_file(&to)?;
+                    fs::remove_file(&to)
+                        .context(format!("Failed to remove file: {}", &to.display()))?;
                 } else if to.is_dir() {
-                    fs::remove_dir_all(&to)?;
-                } else {
-                    return Err(anyhow!(format!(
-                        "Provided path is not a file nor dir??? {}",
-                        &to.display()
-                    )))?;
+                    fs::remove_dir_all(&to)
+                        .context(format!("Failed to remove directory: {}", &to.display()))?;
                 }
 
-                // Copy it over
-                fs::copy(from, &to)?;
+                // Copy over the dots
+                if from.is_file() {
+                    fs_extra::file::copy(from.as_path(), &to.as_path(), &copy_options_file)
+                        .context(format!(
+                            "Failed to copy file {} to {}",
+                            &from.display(),
+                            &to.display()
+                        ))?;
+                } else {
+                    fs_extra::dir::copy(from.as_path(), &to.as_path(), &copy_options_dir).context(
+                        format!(
+                            "Failed to copy direcotry contents of {} to {}",
+                            &from.display(),
+                            &to.display()
+                        ),
+                    )?;
+                }
             }
         }
 
@@ -351,10 +403,11 @@ pub async fn get_all(data_dir: Option<&PathBuf>) -> Result<Vec<SavedTheme>> {
 ///
 /// Nessecary as there are multiple possible locations for it
 fn get_theme_toml_path(theme_dir: &PathBuf) -> Result<PathBuf> {
-    let locations = ["./.hyprtheme/hyprtheme.toml", "./hyprtheme.toml"];
+    let locations = [".hyprtheme/hyprtheme.toml", "hyprtheme.toml"];
 
     for location in &locations {
         let path = theme_dir.join(location);
+        println!("Checking for hyprtheme.toml in {}", path.display());
         match path.try_exists() {
             Result::Ok(true) => return Ok(path),
             Result::Ok(false) => continue, // File does not exist, try the next location
@@ -383,7 +436,7 @@ fn setup_theme_variables(hypr_dir: &PathBuf) -> Result<()> {
     let variables_source_str = create_source_string(&file_path, hypr_dir);
 
     let is_already_sourced = std::fs::read_to_string(&hyprland_config_path)
-        .context("Failed to read out main hyprtheme.conf")?
+        .context("Failed to read out main hyprtheme.conf during variables setup")?
         .contains(&variables_source_str);
 
     if !is_already_sourced {

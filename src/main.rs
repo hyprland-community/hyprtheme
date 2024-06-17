@@ -27,24 +27,13 @@ async fn main() -> ExitCode {
         }
 
         CliFlags::Install(arguments) => {
-            let installed_theme = arguments.install().await;
+            let installed_theme = arguments.install().await.expect("Failed to install theme.");
 
-            match installed_theme {
-                Ok(theme) => {
-                    println!(
-                        "Installed theme {} to {}\n",
-                        &theme.config.meta.name,
-                        &arguments.hypr_dir.display()
-                    );
-                }
-                Err(error) => {
-                    println!(
-                        "Failed to install theme to {}\n{}",
-                        &arguments.hypr_dir.display(),
-                        error
-                    );
-                }
-            }
+            println!(
+                "Installed theme {} to {}\n",
+                &installed_theme.config.meta.name,
+                &arguments.hypr_dir.display()
+            );
         }
 
         CliFlags::Uninstall(arguments) => {

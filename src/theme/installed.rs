@@ -106,13 +106,16 @@ impl InstalledTheme {
     }
 
     async fn run_cleanup_script(&self, install_dir: &PathBuf, hypr_dir: &PathBuf) -> Result<()> {
-        let cleanup_script_path = &self.path.join(&self.config.lifetime.cleanup);
+        let cleanup_path_relative = &self
+            .config
+            .lifetime
+            .as_ref()
+            .and_then(|settings| settings.cleanup.to_owned())
+            .unwrap_or(".hyprtheme/cleanup.sh".to_string());
+        let cleanup_script_path = &self.path.join(cleanup_path_relative);
 
         if !cleanup_script_path.try_exists()? {
-            println!(
-                "No cleanup script found at: {}",
-                &self.config.lifetime.cleanup
-            );
+            println!("No cleanup script found at: {}", cleanup_path_relative);
             return Ok(());
         }
 

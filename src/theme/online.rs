@@ -54,9 +54,15 @@ pub async fn fetch_themes(themes_json_url: Option<&str>) -> Result<Vec<OnlineThe
         "https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true",
     );
 
-    Ok(serde_json::from_str::<Vec<OnlineTheme>>(
-        client.get(url).send().await?.text().await?.as_str(),
-    )?)
+    #[derive(Deserialize, Debug)]
+    struct ThemesData {
+        themes: Vec<OnlineTheme>,
+    }
+
+    Ok(
+        serde_json::from_str::<ThemesData>(client.get(url).send().await?.text().await?.as_str())?
+            .themes,
+    )
 }
 
 /// Lookup featured theme by name

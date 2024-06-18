@@ -83,12 +83,7 @@ impl SavedTheme {
     }
 
     async fn run_setup_script(&self, install_dir: &PathBuf, hypr_dir: &PathBuf) -> Result<()> {
-        let setup_path_relative = &self
-            .config
-            .lifetime
-            .as_ref()
-            .and_then(|setting| setting.setup.to_owned())
-            .unwrap_or(".hyprtheme/setup.sh".to_string());
+        let setup_path_relative = &self.config.lifetime.setup;
         let setup_script_path = &self.path.join(setup_path_relative);
 
         if !setup_script_path.try_exists()? {
@@ -161,6 +156,14 @@ impl SavedTheme {
     ///
     /// Not the hypr dots, as they need special treatment
     fn copy_general_dots(&self) -> Result<()> {
+        if self.config.dots.is_empty() {
+            // Featured themes always have to follow proper practices, so let's recommend those in this case
+            print!(
+                "No dots to move specified. This theme probably depends on it's own scripts for this logic. It won't backup your dots, and a clean uninstall is likely not possible, too. We recommend using themes from https://hyprland-community/hyprtheme/browse"
+            )
+            // TODO prompt to cancel installation.
+        }
+
         for dots_config in &self.config.dots {
             let destination_dir = expanduser(dots_config.to.clone().unwrap_or_else(|| {
                 let mut to_path = dots_config.from.clone().display().to_string();

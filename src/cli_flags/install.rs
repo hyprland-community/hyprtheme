@@ -1,8 +1,5 @@
 use super::helper::parse_path;
-use crate::{
-    consts,
-    theme::{self, create_theme_id, installed::InstalledTheme, online, saved},
-};
+use crate::theme::{self, create_theme_id, installed::InstalledTheme, online, saved};
 use anyhow::Result;
 use clap::Parser;
 use fancy_regex::RegexBuilder;
@@ -24,12 +21,12 @@ pub struct InstallArgs {
 
     /// The data directory of Hyprtheme by default "~/.local/share/hyprtheme/"
     /// The theme will be saved in the sub-directory "themes"
-    #[arg(short,long,default_value=consts::DEFAULT_DOWNLOAD_PATH,value_parser=parse_path)]
-    pub data_dir: PathBuf,
+    #[arg(short,long,value_parser=parse_path)]
+    pub data_dir: Option<PathBuf>,
 
     /// The path to the the Hyprland config directory, where the theme will be installed to.
-    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
-    pub hypr_dir: PathBuf,
+    #[arg(long,value_parser=parse_path)]
+    pub hypr_dir: Option<PathBuf>,
 }
 
 impl InstallArgs {
@@ -43,7 +40,6 @@ impl InstallArgs {
             ThemeName::Featured(theme) => {
                 // There doesn't seem to be a way to determine if a featured theme is already installed
                 // only by it's name, as themes from other repos can have the same name
-
                 // TODO we need to ban featured themes with the same names or handle this case with a prompt again
 
                 let found_theme = online::find_featured(&theme)
@@ -53,7 +49,7 @@ impl InstallArgs {
                         url: theme.repo,
                         branch: theme.branch,
                     })
-                    .expect(format!("Tried to fetch theme {} from featured themes, but could not find it. \nSee https://hyprland-community.org/hyprtheme/browse for all featured themes.", &theme ).as_str());
+                    .expect(format!("Tried to fetch theme {} from featured themes, but could not find it.\nSee https://hyprland-community.org/hyprtheme/browse for all featured themes.\nIf you intended to download a theme from a repo pass its URL as an argument instead.", &theme ).as_str());
 
                 GitUrlBranch {
                     url: found_theme.url,
@@ -74,30 +70,32 @@ impl InstallArgs {
 
         let saved_theme = saved::find_saved(
             &create_theme_id(&git_data.url, git_data.branch.as_deref()),
-            Some(&self.data_dir),
+            self.data_dir.as_ref(),
         )
         .await
-        .unwrap_or({
-            println!("Failed to lookup saved themes! Downloading theme to be safe...");
-            None
-        });
+        .expect("Failed to check if theme is already saved");
 
         let saved_theme = match saved_theme {
-            Some(saved) => saved,
+            Some(saved) => {
+                println!("Theme already saved, skipped download.");
+                saved
+            }
+
             None => {
                 let downloaded = theme::online::download(
                     &git_data.url,
                     git_data.branch.as_deref(),
-                    Some(&self.data_dir),
+                    self.data_dir.as_ref(),
                 )
                 .await
                 .expect("Failed to download theme");
+
                 println!("Downloaded theme.");
                 downloaded
             }
         };
 
-        saved_theme.install(Some(&self.hypr_dir)).await
+        saved_theme.install(self.hypr_dir.as_ref()).await
     }
 }
 

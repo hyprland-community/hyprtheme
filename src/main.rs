@@ -29,15 +29,11 @@ async fn main() -> ExitCode {
         CliFlags::Install(arguments) => {
             let installed_theme = arguments.install().await.expect("Failed to install theme.");
 
-            println!(
-                "Installed theme {} to {}\n",
-                &installed_theme.config.meta.name,
-                &arguments.hypr_dir.display()
-            );
+            println!("Installed theme {}", installed_theme.config.meta.name);
         }
 
         CliFlags::Uninstall(arguments) => {
-            let installed_theme = installed::get(Some(&arguments.hypr_dir))
+            let installed_theme = installed::get(arguments.hypr_dir.as_ref())
                 .await
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found");
@@ -45,7 +41,7 @@ async fn main() -> ExitCode {
             let name = &installed_theme.config.meta.name.clone();
 
             installed_theme
-                .uninstall(Some(&arguments.hypr_dir))
+                .uninstall(arguments.hypr_dir.as_ref())
                 .await
                 .expect("Failed to uninstall theme");
 
@@ -53,11 +49,11 @@ async fn main() -> ExitCode {
         }
 
         CliFlags::Update(arguments) => {
-            let installed_theme = installed::get(Some(&arguments.hypr_dir))
+            let installed_theme = installed::get(arguments.hypr_dir.as_ref())
                 .await
                 .expect("Error retrieving installed theme")
                 .expect("No installed theme found")
-                .update(Some(&arguments.data_dir))
+                .update(arguments.data_dir.as_ref())
                 .await
                 .expect("Failed to update theme");
 
@@ -70,14 +66,14 @@ async fn main() -> ExitCode {
         CliFlags::Remove(arguments) => arguments.remove().await.expect("Failed to remove theme"),
 
         CliFlags::Clean(arguments) => {
-            let themes = saved::get_all(Some(&arguments.data_dir))
+            let themes = saved::get_all(arguments.data_dir.as_ref())
                 .await
                 .expect("Failed to lookup saved themes.");
 
             for theme in themes {
                 let name = theme.config.meta.name.clone();
                 if theme
-                    .is_installed(Some(&arguments.hypr_dir))
+                    .is_installed(arguments.hypr_dir.as_ref())
                     .await
                     .expect(format!("Failed to check installed theme: {}", &name).as_str())
                 {
@@ -92,7 +88,7 @@ async fn main() -> ExitCode {
         }
 
         CliFlags::UpdateAll(arguments) => {
-            let themes = saved::get_all(Some(&arguments.data_dir))
+            let themes = saved::get_all(arguments.data_dir.as_ref())
                 .await
                 .expect("Failed to lookup saved themes.");
 

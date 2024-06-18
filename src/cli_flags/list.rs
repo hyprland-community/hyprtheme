@@ -14,19 +14,19 @@ pub struct List {
     pub featured: bool,
 
     /// The path to the the Hyprland config directory
-    #[arg(long,default_value=consts::DEFAULT_HYPR_CONFIG_PATH,value_parser=parse_path)]
-    pub hypr_dir: PathBuf,
+    #[arg(long,value_parser=parse_path)]
+    pub hypr_dir: Option<PathBuf>,
 
     /// The path to the the Hyprtheme data directory
-    #[arg(short,long,default_value=consts::DEFAULT_DOWNLOAD_PATH,value_parser=parse_path)]
-    pub data_dir: PathBuf,
+    #[arg(short,long,value_parser=parse_path)]
+    pub data_dir: Option<PathBuf>,
     // TODO add as_json: bool,
 }
 
 impl List {
     pub async fn get_formatted_list(&self) -> Result<String> {
         let installed_theme: Option<Item> =
-            installed::get(Some(&self.hypr_dir))
+            installed::get(self.hypr_dir.as_ref())
                 .await?
                 .map(|theme| Item {
                     installed: true,
@@ -37,7 +37,7 @@ impl List {
                     branch: theme.config.meta.branch.clone(),
                 });
 
-        let saved_themes: Vec<Item> = saved::get_all(Some(&self.data_dir))
+        let saved_themes: Vec<Item> = saved::get_all(self.data_dir.as_ref())
             .await?
             .into_iter()
             .map(|theme| Item {

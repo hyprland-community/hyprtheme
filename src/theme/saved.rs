@@ -11,8 +11,7 @@ use expanduser::expanduser;
 use globset::{Glob, GlobSetBuilder};
 use pathdiff::diff_paths;
 use serde::Deserialize;
-use std::fs::{self, OpenOptions};
-use std::io::Write;
+use std::fs::{self};
 use std::path::PathBuf;
 use walkdir::WalkDir;
 
@@ -49,8 +48,8 @@ impl SavedTheme {
         let _ = fs::create_dir_all(install_dir)
             .context("Failed to create hyprtheme subdirectory in hypr config direcotry.")?;
 
-        let _ = &self.setup_dots(&hypr_dir, install_dir).await?;
         let _ = setup_theme_variables(&hypr_dir)?;
+        let _ = &self.setup_dots(&hypr_dir, install_dir).await?;
         let _ = &self.run_setup_script(install_dir, &hypr_dir).await?;
 
         // Copy over the hyprtheme.toml, which gets used to determine which theme is currently installed
@@ -91,6 +90,8 @@ impl SavedTheme {
             return Ok(());
         }
 
+        println!("Running setup script...");
+
         std::process::Command::new("bash")
             .env("THEME_DIR", &self.path)
             .env("HYPR_INSTALL_DIR", &install_dir)
@@ -111,6 +112,7 @@ impl SavedTheme {
         let copy_options = fs_extra::dir::CopyOptions {
             overwrite: true,
             skip_exist: false,
+            content_only: true,
             ..Default::default()
         };
 
@@ -120,16 +122,21 @@ impl SavedTheme {
             install_dir.display()
         ))?;
 
+        println!(
+            "\nHyprconfigs\nCopied {} to {}\n",
+            from_dir.display(),
+            install_dir.display()
+        );
+
         // Calculate theme source string, like `source=~/.config/hypr/settings.conf`
         // TODO: replace absolute source path with ~ if possible
         // makes config more portable
 
         let hyprland_config_path = &hypr_dir.join("hyprland.conf");
-        let hyprtheme_source_str =
-            create_hyrptheme_source_string(&install_dir.join("hyprtheme.conf"));
+        let hyprtheme_source_str = create_hyrptheme_source_string(&hypr_dir);
         // Read out hyprland.conf via std::fs::read_to_string("list.txt").unwrap();
         // Check if hyprtheme.conf is sourced in hyprland.conf, if not, source it
-        let is_already_sourced = std::fs::read_to_string(&hyprland_config_path)
+        let is_already_sourced = fs::read_to_string(&hyprland_config_path)
             .context(format!(
                 "Failed to read out main hyprtheme.conf during hyprland dots setup at {}",
                 hyprland_config_path.display()
@@ -137,14 +144,10 @@ impl SavedTheme {
             .contains(&hyprtheme_source_str);
 
         if !is_already_sourced {
-            // Append the source line
-            // TODO should be sourced after variables sourcing
-            let mut config_file = OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(&hyprland_config_path)?;
-
-            config_file.write_all(&hyprtheme_source_str.as_bytes())?;
+            prepend_to_file(hyprland_config_path, &hyprtheme_source_str).context(format!(
+                "Failed to prepend hyprtheme source string to Hyprland config at: {}",
+                &hyprland_config_path.display()
+            ))?;
         }
 
         Ok(())
@@ -159,7 +162,7 @@ impl SavedTheme {
         if self.config.dots.is_empty() {
             // Featured themes always have to follow proper practices, so let's recommend those in this case
             print!(
-                "No dots to move specified. This theme probably depends on it's own scripts for this logic. It won't backup your dots, and a clean uninstall is likely not possible, too. We recommend using themes from https://hyprland-community/hyprtheme/browse"
+                "Theme specifies no dots to move. It probably depends on it's own scripts for this logic.\nIt won't backup your dots, and a clean uninstall is likely not possible, too.\nWe recommend using themes from https://hyprland-community/hyprtheme/browse"
             )
             // TODO prompt to cancel installation.
         }
@@ -265,9 +268,11 @@ impl SavedTheme {
                 if to.is_file() {
                     fs::remove_file(&to)
                         .context(format!("Failed to remove file: {}", &to.display()))?;
+                    println!("Removed file: {}", &to.display());
                 } else if to.is_dir() {
                     fs::remove_dir_all(&to)
                         .context(format!("Failed to remove directory: {}", &to.display()))?;
+                    println!("Removed directory: {}", &to.display());
                 }
 
                 // Copy over the dots
@@ -278,6 +283,8 @@ impl SavedTheme {
                             &from.display(),
                             &to.display()
                         ))?;
+
+                    println!("Copied {} to {}", from.display(), to.display());
                 } else {
                     fs_extra::dir::copy(from.as_path(), &to.as_path(), &copy_options_dir).context(
                         format!(
@@ -286,6 +293,7 @@ impl SavedTheme {
                             &to.display()
                         ),
                     )?;
+                    println!("Copied {} to {}", from.display(), to.display());
                 }
             }
         }
@@ -348,8 +356,15 @@ impl std::fmt::Display for SavedTheme {
 ///
 /// Like this a themes can be loaded into memory, queried
 pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
-    let config_path = get_theme_toml_path(path)?;
-    let config: ParsedThemeConfig = toml::from_str(fs::read_to_string(&config_path)?.as_str())?;
+    let config_path = get_theme_toml_path(path).context(format!(
+        "Failed to retrieve hyprtheme.toml from {}",
+        &path.display()
+    ))?;
+    let config: ParsedThemeConfig = toml::from_str(fs::read_to_string(&config_path)?.as_str())
+        .context(format!(
+            "Failed to parse hyprtheme.toml at {}",
+            &config_path.display()
+        ))?;
 
     // Lets prevent weirdly named themes, like "ФΞд฿Ŀ"
     if !config
@@ -359,6 +374,23 @@ pub async fn from_directory(path: &PathBuf) -> Result<SavedTheme> {
         .all(|character| matches!(character, b'a'..=b'z' | b'0'..=b'9' | b'_' | b'-' | b' '))
     {
         return Err(anyhow!("Theme name contains invalid characters. Only latin letters, numbers and '_', '-' are allowed."));
+    }
+
+    let hyprtheme_conf_location_relative = &config.hypr.location.join("hyprtheme.conf");
+    let hyprtheme_conf_location_relative = hyprtheme_conf_location_relative
+        .strip_prefix("./")
+        .unwrap_or(&hyprtheme_conf_location_relative);
+    let hyprtheme_conf_location_absolute = path.join(&hyprtheme_conf_location_relative);
+
+    let has_hyprtheme_conf = hyprtheme_conf_location_absolute
+        .try_exists()
+        .context("Failed to check if hyprtheme.conf is present in theme")?;
+
+    if !has_hyprtheme_conf {
+        return Err(anyhow!(
+            "hyprtheme.conf not found. Checked location: {}",
+            &hyprtheme_conf_location_relative.display()
+        ));
     }
 
     return Ok(SavedTheme {
@@ -387,12 +419,17 @@ pub async fn find_saved(
 
 /// Gets all themes saved in the data directory
 pub async fn get_all(data_dir: Option<&PathBuf>) -> Result<Vec<SavedTheme>> {
+    println!("Data-dir: {:#?}", data_dir);
+
     let data_dir: PathBuf = data_dir
         .unwrap_or(&expanduser(DEFAULT_DOWNLOAD_PATH)?)
         .to_owned();
 
-    let themes_dir = data_dir.join("/themes/");
-    let entries = fs::read_dir(themes_dir)?;
+    let themes_dir = data_dir.join("themes/");
+    let entries = fs::read_dir(&themes_dir).context(format!(
+        "Failed to read out themes data directory at: {}",
+        &themes_dir.display()
+    ))?;
 
     let mut themes: Vec<SavedTheme> = vec![];
     for entry in entries {
@@ -410,16 +447,17 @@ fn get_theme_toml_path(theme_dir: &PathBuf) -> Result<PathBuf> {
 
     for location in &locations {
         let path = theme_dir.join(location);
-        println!("Checking for hyprtheme.toml in {}", path.display());
+
         match path.try_exists() {
             Result::Ok(true) => return Ok(path),
-            Result::Ok(false) => continue, // File does not exist, try the next location
-            Err(e) => return Err(e.into()), // Propagate any errors that occurred during the check
+            Result::Ok(false) => continue,
+            Err(e) => return Err(e.into()),
         }
     }
 
     Err(anyhow!(
-        "hyprtheme.toml not found in any of the default locations"
+        "hyprtheme.toml not found in any of the default locations.\nTheme directory: {}",
+        &theme_dir.display()
     ))
 }
 
@@ -444,7 +482,7 @@ fn setup_theme_variables(hypr_dir: &PathBuf) -> Result<()> {
 
     if !is_already_sourced {
         // Append the source line
-        prepend_to_file(&file_path, &variables_source_str)?;
+        prepend_to_file(&hyprland_config_path, &variables_source_str)?;
     }
 
     Ok(())

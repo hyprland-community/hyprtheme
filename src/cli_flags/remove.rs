@@ -14,8 +14,8 @@ pub struct RemoveArgs {
     pub theme_name: String,
 
     /// The data directory of Hyprtheme, by default in `~/.local/share/hyprtheme/`
-    #[arg(short, long, default_value = "~/.local/share/hyprtheme",value_parser=parse_path)]
-    pub data_dir: PathBuf,
+    #[arg(short, long, value_parser=parse_path)]
+    pub data_dir: Option<PathBuf>,
 }
 
 impl RemoveArgs {
@@ -25,7 +25,7 @@ impl RemoveArgs {
         // Now we want to remove Gruvbox. But which one?
         // So let's just prompt if tere are multiple themes with the same name
 
-        let themes = saved::get_all(Some(&self.data_dir))
+        let themes = saved::get_all(self.data_dir.as_ref())
             .await
             .expect("Failed to lookup saved themes.");
 

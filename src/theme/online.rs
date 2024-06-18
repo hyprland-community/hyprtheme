@@ -1,10 +1,10 @@
 use super::saved::{self, SavedTheme};
 use crate::consts::DEFAULT_DOWNLOAD_PATH;
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use expanduser::expanduser;
 use reqwest::Client;
 use serde::Deserialize;
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 use url::Url;
 
 // Contains the code to interact with featured themes
@@ -72,8 +72,6 @@ pub async fn download(
     .replace("/", ".")
     .replace("\\", ".");
 
-    println!("Whut is this dir_name: {}", dir_name.clone());
-
     // clone repo
     let themes_dir = expanduser(
         data_dir
@@ -89,17 +87,13 @@ pub async fn download(
     ))?
     .join("themes/");
 
-    let themes_dir_string = &themes_dir.to_str().context(format!(
-        "Download path {} contains non-unicode characters.",
+    fs::create_dir_all(&themes_dir).context(format!(
+        "Failed to create themes directory to download theme: {}",
         &themes_dir.display()
     ))?;
-    let theme_dir = themes_dir.join(&dir_name);
-
-    println!("Whut is this themes_dir: {}", themes_dir_string);
 
     let clone_cmd = format!(
-        "mkdir -p {} && git clone --depth 1 {} {} {}",
-        themes_dir_string,
+        "git clone --depth 1 {} {} {}",
         branch
             .map(|branch_name| "--branch ".to_owned() + branch_name)
             .unwrap_or("".to_owned()),
@@ -107,17 +101,20 @@ pub async fn download(
         &dir_name
     );
 
-    println!("Whut is this clone_cmd: {}", clone_cmd);
-
-    std::process::Command::new("sh")
+    let clone_operation = std::process::Command::new("sh")
         .arg("-c")
         .stdout(std::process::Stdio::inherit())
         .stderr(std::process::Stdio::inherit())
-        .current_dir(&themes_dir)
         .arg(&clone_cmd)
-        .output()?;
+        .current_dir(&themes_dir)
+        .output()
+        .context(format!("Failed to execute clone. Command: {}", &clone_cmd))?;
 
+    if !clone_operation.status.success() {
+        return Err(anyhow!("Error when cloning theme repository"));
+    }
     // parse hyprtheme.toml
+    let theme_dir = themes_dir.join(&dir_name);
     saved::from_directory(&theme_dir).await
 }
 

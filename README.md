@@ -52,3 +52,4 @@ https://user-images.githubusercontent.com/77581181/211601026-44109e18-b20c-4d5c-
 - [ ] aur pkg
 - [ ] JSON for List command
 - [ ] Support old format
+- [ ] hyprtheme config file

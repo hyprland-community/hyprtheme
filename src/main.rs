@@ -1,9 +1,9 @@
-mod cli_flags;
+mod cli;
 mod consts;
 mod theme;
 use anyhow::{Context, Result};
 use clap::Parser;
-use cli_flags::flags::CliFlags;
+use cli::flags::CliFlags;
 use expanduser::expanduser;
 use std::{fs, process::ExitCode};
 use theme::{

@@ -15,9 +15,13 @@ pub struct Config {
     pub branch: Option<String>,
 
     pub theme: ConfigTheme,
-    pub hypr_module: Option<Vec<ConfigHyprModule>>,
-    pub module: Option<Vec<ConfigModule>>,
-    pub link: Option<Vec<ConfigLink>>,
+
+    #[serde(default)]
+    pub hypr_module: Vec<ConfigHyprModule>,
+    #[serde(default)]
+    pub module: Vec<ConfigModule>,
+    #[serde(default)]
+    pub link: Vec<ConfigLink>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -34,7 +38,8 @@ pub struct ConfigHyprModule {
     pub name: String,
     pub desc: String,
 
-    pub enabled: Option<bool>,
+    #[serde(default)]
+    pub enabled: bool,
 
     pub config: PathBuf,
 
@@ -43,6 +48,8 @@ pub struct ConfigHyprModule {
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigModule {
+    
+    #[serde(default)]
     pub enabled:Option<bool>,
 
     pub config: PathBuf,
@@ -54,8 +61,11 @@ pub struct ConfigModule {
 pub struct ConfigLink {
     pub from: PathBuf,
     pub to: PathBuf,
-    pub ignore: Option<Vec<String>>,
-    pub include: Option<Vec<String>>,
+
+    #[serde(default)]
+    pub ignore: Vec<PathBuf>,
+    #[serde(default)]
+    pub include: Vec<PathBuf>,
 }
 
 impl Config {

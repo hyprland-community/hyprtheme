@@ -42,20 +42,9 @@ impl ThemeId {
     }
 
     pub fn from_theme(theme: Box<dyn ThemeType>) -> ThemeId {
-        match theme {
-            t if t.as_any().is::<LegacyTheme>() => {
-                let t = t.as_any().downcast_ref::<LegacyTheme>().unwrap();
-                ThemeId::new(t.partial.repo.clone(), t.partial.branch.clone())
-            }
-            t if t.as_any().is::<InstalledTheme>() => {
-                let t = t.as_any().downcast_ref::<InstalledTheme>().unwrap();
-                ThemeId::new(t.partial.repo.clone(), t.partial.branch.clone())
-            }
-            t if t.as_any().is::<OnlineTheme>() => {
-                let t = t.as_any().downcast_ref::<OnlineTheme>().unwrap();
-                ThemeId::new(t.partial.repo.clone(), t.partial.branch.clone())
-            }
-            _ => ThemeId::default(),
+        ThemeId{
+            repo: theme.get_repo(),
+            branch: theme.get_branch(),
         }
     }
 }
@@ -127,7 +116,7 @@ impl Theme{
     }
 }
 
-pub async fn legacy_themes(themes_dir: &PathBuf) -> Result<Vec<LegacyTheme>> {
+pub async fn fetch_legacy(themes_dir: &PathBuf) -> Result<Vec<LegacyTheme>> {
     let mut themes: Vec<LegacyTheme> = Vec::new();
 
     for entry in std::fs::read_dir(themes_dir)? {
@@ -167,7 +156,7 @@ pub async fn legacy_themes(themes_dir: &PathBuf) -> Result<Vec<LegacyTheme>> {
 }
 
 
-pub async fn installed_themes(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme>> {
+pub async fn fetch_installed(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme>> {
     let mut themes: Vec<InstalledTheme> = Vec::new();
 
     for entry in std::fs::read_dir(themes_dir)? {
@@ -192,7 +181,7 @@ pub async fn installed_themes(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme
     Ok(themes)
 }
 
-pub async fn online_themes(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> Result<Vec<OnlineTheme>> {
+pub async fn fetch_online(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> Result<Vec<OnlineTheme>> {
     let client = Client::new();
 
     let blacklist_ids = blacklist_ids.unwrap_or(Vec::new());
@@ -243,7 +232,7 @@ pub async fn fetch_themes(urls:Option<Vec<&str>>, directories: Option<Vec<PathBu
     
 
     for dir in directories {
-        match legacy_themes(&dir).await {
+        match fetch_legacy(&dir).await {
             Ok(legacy_themes) => {
                 for theme in legacy_themes{
                     themes.push(Box::new(theme.clone()));
@@ -255,7 +244,7 @@ pub async fn fetch_themes(urls:Option<Vec<&str>>, directories: Option<Vec<PathBu
             }
         }
         
-        match installed_themes(&dir).await {
+        match fetch_installed(&dir).await {
             Ok(installed_themes) => {
                 for theme in installed_themes{
                     themes.push(Box::new(theme.clone()));
@@ -268,7 +257,7 @@ pub async fn fetch_themes(urls:Option<Vec<&str>>, directories: Option<Vec<PathBu
         }
     }
     
-    for theme in online_themes(urls, Some(theme_ids)).await? {
+    for theme in fetch_online(urls, Some(theme_ids)).await? {
         themes.push(Box::new(theme.clone()));
     }
 

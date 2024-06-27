@@ -1,4 +1,4 @@
-use std::{fmt::Display, path::{Path, PathBuf}};
+use std::{fmt::Display, path::{PathBuf}};
 
 pub mod legacy;
 pub mod toml_config;
@@ -7,7 +7,6 @@ pub mod online;
 
 
 use anyhow::Result;
-use expanduser::expanduser;
 use online::OnlineTheme;
 use serde::Deserialize;
 use std::any::Any;
@@ -77,6 +76,13 @@ pub trait ThemeType : Any {
     fn get_branch(&self) -> Option<String>;
     fn get_desc(&self) -> String;
     fn get_images(&self) -> Vec<String>;
+    fn get_type_string(&self) -> String;
+}
+
+impl Display for dyn ThemeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "Theme: {}::{} [{}]", &self.get_name(),&self.get_id(),&self.get_type_string());
+    }
 }
 
 
@@ -181,7 +187,7 @@ pub async fn fetch_installed(themes_dir: &PathBuf) -> Result<Vec<InstalledTheme>
     Ok(themes)
 }
 
-pub async fn fetch_online(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> Result<Vec<OnlineTheme>> {
+pub async fn fetch_online(urls:Vec<String>,blacklist_ids:Option<Vec<ThemeId>>) -> Result<Vec<OnlineTheme>> {
     let client = Client::new();
 
     let blacklist_ids = blacklist_ids.unwrap_or(Vec::new());
@@ -194,7 +200,7 @@ pub async fn fetch_online(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> 
     let mut themes: Vec<OnlineTheme> = Vec::new();    
     
     for url in urls {
-        match client.get(url).send().await {
+        match client.get(&url).send().await {
             Ok(response) => {
                 match serde_json::from_str::<ThemesData>(&response.text().await?) {
                     Ok(data) => {
@@ -208,7 +214,7 @@ pub async fn fetch_online(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> 
                         }
     
                     }
-                    Err(e) => return Err(anyhow::anyhow!("Failed to parse themes json({:?}) : {:?}", url, e))
+                    Err(e) => return Err(anyhow::anyhow!("Failed to parse themes json({:?}) : {:?}", &url, e))
                 }
             }
             Err(e) => return Err(anyhow::anyhow!("Failed to fetch themes json({:?}) : {:?}", url, e))
@@ -217,20 +223,41 @@ pub async fn fetch_online(urls:Vec<&str>,blacklist_ids:Option<Vec<ThemeId>>) -> 
     Ok(themes)
 }
 
-pub async fn fetch_themes(urls:Option<Vec<&str>>, directories: Option<Vec<PathBuf>>) -> Result<Vec<Box<dyn ThemeType>>> {
+pub async fn fetch_all_installed(directories: &Vec<PathBuf>) -> Result<Vec<Box<dyn ThemeType>>> {
+    let mut themes:Vec<Box<dyn ThemeType>> = Vec::new();
+
+    for dir in directories {
+        match fetch_legacy(&dir).await {
+            Ok(legacy_themes) => {
+                for theme in legacy_themes{
+                    themes.push(Box::new(theme.clone()));
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to fetch legacy themes({:?}) : {:?}", dir,e);
+            }
+        }
+        
+        match fetch_installed(&dir).await {
+            Ok(installed_themes) => {
+                for theme in installed_themes{
+                    themes.push(Box::new(theme.clone()));
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to fetch installed themes({:?}) : {:?}", dir,e);
+            }
+        }
+    }
+
+    Ok(themes)
+}
+
+pub async fn fetch_all(urls:&Vec<String>, directories: &Vec<PathBuf>) -> Result<Vec<Box<dyn ThemeType>>> {
     let mut themes:Vec<Box<dyn ThemeType>> = Vec::new();
 
     let mut theme_ids: Vec<ThemeId> = Vec::new();
-
-    let urls = urls.unwrap_or(vec![
-        "https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true",
-    ]);
     
-    let directories = directories.unwrap_or(vec![
-        expanduser("~/.config/hypr/themes").expect("Failed to expand themes directory"),
-    ]);
-    
-
     for dir in directories {
         match fetch_legacy(&dir).await {
             Ok(legacy_themes) => {
@@ -257,7 +284,7 @@ pub async fn fetch_themes(urls:Option<Vec<&str>>, directories: Option<Vec<PathBu
         }
     }
     
-    for theme in fetch_online(urls, Some(theme_ids)).await? {
+    for theme in fetch_online(urls.to_vec(), Some(theme_ids)).await? {
         themes.push(Box::new(theme.clone()));
     }
 

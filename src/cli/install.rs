@@ -15,18 +15,14 @@ pub struct InstallArgs {
     // #[arg(short,long,value_parser=ThemeName::parse)]
     // pub name: ThemeName,
 
-    /// The branch of the repository to install
-    #[arg(short, long)]
+    #[arg(short, long, group = "source")]
+    pub git: Option<String>,
+
+    #[arg(short, long, requires = "git")]
     pub branch: Option<String>,
 
-    /// The data directory of Hyprtheme by default "~/.local/share/hyprtheme/"
-    /// The theme will be saved in the sub-directory "themes"
-    #[arg(short,long,value_parser=parse_path)]
-    pub data_dir: Option<PathBuf>,
-
-    /// The path to the the Hyprland config directory, where the theme will be installed to.
-    #[arg(long,value_parser=parse_path)]
-    pub hypr_dir: Option<PathBuf>,
+    #[arg(group = "source")]
+    pub theme_id: Option<String>,
 }
 
 // impl InstallArgs {

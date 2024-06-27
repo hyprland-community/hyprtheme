@@ -12,6 +12,10 @@ impl ThemeType for LegacyTheme {
         self
     }
 
+    fn get_type_string(&self) -> String {
+        "legacy".to_string()
+    }
+
     fn get_id(&self) -> ThemeId {
         ThemeId{
             repo: self.partial.repo.clone(),

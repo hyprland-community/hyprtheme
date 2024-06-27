@@ -3,7 +3,7 @@ mod install;
 mod list;
 mod remove;
 
-use {helper::parse_path, install::InstallArgs, list::List, remove::RemoveArgs};
+use {helper::parse_path,helper::parse_paths, install::InstallArgs, list::List, remove::RemoveArgs};
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -15,10 +15,17 @@ pub struct CliParser{
     #[arg(long,value_parser=parse_path,default_value="~/.config/hypr/")]
     pub hypr_dir: PathBuf,
 
-    /// The path to the hyprtheme data directory.
-    #[arg(short, long, value_parser=parse_path, default_value="~/.config/hypr/themes/")]
-    pub themes_dir: PathBuf,
+    // /// The path to the hyprtheme data directory.
+    // #[arg(short, long, value_parser=parse_path, default_value="~/.config/hypr/themes/")]
+    // pub themes_dir: PathBuf,
 
+    /// path where themes are stored, can be repeated to add multiple directories
+    #[arg(short, long, value_parser=parse_path, default_value="~/.config/hypr/themes/")]
+    pub theme_dirs: Vec<PathBuf>,
+
+    /// url to raw text files containing a list of themes in json, can be repeated to add multiple urls
+    #[arg(short, long, default_value="https://github.com/hyprland-community/theme-repo/blob/main/themes.json?raw=true")]
+    pub theme_urls: Vec<String>,
 
     #[command(subcommand)]
     pub commands: CliCommands,
@@ -35,7 +42,6 @@ pub enum CliCommands {
     /// Accepted values are:
     /// - Theme name for themes featured on "https://hyprland-community/hyprtheme/browse"
     /// - A git url
-    /// - For Github: author/reponame
     Install(InstallArgs),
 
     /// Uninstall the installed theme
@@ -44,24 +50,24 @@ pub enum CliCommands {
     /// Update the installed theme
     Update(UpdateArgs),
 
-    /// Update all saved themes, including the currently installed one
-    UpdateAll(UpdateArgs),
-
-    /// Remove a saved theme from the data directory
-    ///
-    /// Takes a saved theme ID. Use the list command to get the ID.
-    Remove(RemoveArgs),
-
-    /// Removes all saved themes, excluding the currently installed one
-    Clean(CleanAllArgs),
+    // /// Remove a saved theme from the data directory
+    // ///
+    // /// Takes a saved theme ID. Use the list command to get the ID.
+    // Remove(RemoveArgs),
 }
 
 #[derive(Parser,Clone)]
 pub struct UninstallArgs {
+    /// uses theme name or theme id (theme_name:branch@repo) to identify the theme to uninstall
+    #[arg()]
+    pub theme_id: String,
 }
 
 #[derive(Parser,Clone)]
 pub struct UpdateArgs {
+    #[arg()]
+    pub theme_id: String,
+
 }
 
 #[derive(Parser,Clone)]

@@ -9,9 +9,24 @@ use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Parser,Clone)]
 pub struct List {
-    /// Wether to list featured downloadable themes
-    #[arg(short, long, default_value = "false")]
-    pub featured: bool,
+   
+    /// show installed themes
+    #[arg(short,long)]
+    pub installed: bool,
+
+    /// show online themes excluding the ones already installed
+    #[arg(short,long)]
+    pub online: bool,
+
+    /// whether to show already installed themes while listing online themes
+    #[arg(short,long, requires="online")]
+    pub show_installed: bool,
+
+    /// show installed themes that use the legacy format
+    #[arg(short,long)]
+    pub legacy: bool,
+
+    
 }
 
 // impl List {

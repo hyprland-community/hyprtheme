@@ -227,16 +227,16 @@ pub async fn fetch_all_installed(directories: &Vec<PathBuf>) -> Result<Vec<Box<d
     let mut themes:Vec<Box<dyn ThemeType>> = Vec::new();
 
     for dir in directories {
-        match fetch_legacy(&dir).await {
-            Ok(legacy_themes) => {
-                for theme in legacy_themes{
-                    themes.push(Box::new(theme.clone()));
-                }
-            }
-            Err(e) => {
-                eprintln!("Failed to fetch legacy themes({:?}) : {:?}", dir,e);
-            }
-        }
+        // match fetch_legacy(&dir).await {
+        //     Ok(legacy_themes) => {
+        //         for theme in legacy_themes{
+        //             themes.push(Box::new(theme.clone()));
+        //         }
+        //     }
+        //     Err(e) => {
+        //         eprintln!("Failed to fetch legacy themes({:?}) : {:?}", dir,e);
+        //     }
+        // }
         
         match fetch_installed(&dir).await {
             Ok(installed_themes) => {

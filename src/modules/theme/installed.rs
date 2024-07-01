@@ -76,6 +76,62 @@ impl InstalledTheme {
         Ok(theme)
     }
 
+    pub fn get_modules(&self) -> Vec<InstalledTheme> {
+        let mut modules = Vec::new();
+        for module in &self.config.module {
+            let path = self.parent_dir.join(&module.config);
+            match InstalledTheme::from_file(&path) {
+                Ok(theme) => modules.push(theme),
+                Err(_) => continue,
+            }
+        }
+        modules
+    }
+
+    pub fn get_links(&self) -> Vec<(PathBuf,PathBuf)> {
+        let mut links = Vec::new();
+        for link in &self.config.link {
+            links.push((link.from.clone(),link.to.clone()));
+        }
+        links
+    }
+
+    pub fn get_hypr_modules(&self) -> Vec<PathBuf> {
+        let mut configs = Vec::new();
+        for module in &self.config.hypr_module {
+            let path = self.parent_dir.join(&module.config);
+            configs.push(path);
+        }
+        configs
+    }
+
+    pub fn get_hypr_config(&self) -> PathBuf {
+        self.config.theme.config.clone()
+    }
+
+    pub fn load(&self) -> Result<()> {
+        if let Some(load) = &self.config.theme.load {
+            let path = self.parent_dir.join(load);
+            match std::process::Command::new(path).output() {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            }
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn unload(&self) -> Result<()> {
+        if let Some(unload) = &self.config.theme.unload {
+            let path = self.parent_dir.join(unload);
+            match std::process::Command::new(path).output() {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            }
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl ThemeType for InstalledTheme {

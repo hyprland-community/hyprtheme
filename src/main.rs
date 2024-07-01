@@ -28,10 +28,9 @@ async fn parse_cli() -> Result<()> {
         CliCommands::List(mut flags) => {
             println!("listing themes");
 
-            if !flags.legacy && !flags.installed && !flags.online {
+            if !flags.installed && !flags.online {
                 flags.installed = true;
                 flags.online = true;
-                flags.legacy = true;
             }
             
             let mut blacklist_ids = Vec::new();
@@ -39,7 +38,7 @@ async fn parse_cli() -> Result<()> {
             match fetch_all_installed(&theme_dirs).await {
                 Ok(themes) => {
                     for theme in themes {
-                        if (flags.legacy && theme.get_type_string() == "legacy") || (flags.installed && theme.get_type_string() == "installed") {
+                        if flags.installed && theme.get_type_string() == "installed" {
                             println!("{}",theme);
                             blacklist_ids.push(theme.get_id());
                         }

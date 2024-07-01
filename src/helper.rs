@@ -3,6 +3,23 @@ use anyhow::Result;
 
 use crate::modules::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
 
+pub fn sanitize_name(name:&str) -> String{
+    let mut name = name.to_string();
+    name = name.replace(" ","-");
+    name = name.replace("_","-");
+    name = name.replace(".","-");
+    name = name.replace("/","-");
+    name = name.replace("\\","-");
+    name = name.replace(":","-");
+    name = name.replace("*","-");
+    name = name.replace("?","-");
+    name = name.replace("\"","-");
+    name = name.replace("<","-");
+    name = name.replace(">","-");
+    name = name.replace("|","-");
+    return name;
+}
+
 pub async fn identify_theme(theme_id:&str,theme_dirs:&Vec<PathBuf>,theme_urls:&Vec<String>) -> Result<Box<dyn ThemeType>>{
     let mut matches = Vec::new();
 

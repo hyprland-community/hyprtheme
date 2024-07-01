@@ -27,7 +27,7 @@ pub struct Config {
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigTheme {
     pub config: PathBuf,
-    pub minimum_hyprland_version: String,
+    // pub minimum_hyprland_version: String,
 
     pub load: Option<String>,
     pub unload: Option<String>,
@@ -38,23 +38,23 @@ pub struct ConfigHyprModule {
     pub name: String,
     pub desc: String,
 
-    #[serde(default)]
-    pub enabled: bool,
+    // #[serde(default)]
+    // pub enabled: bool,
 
     pub config: PathBuf,
 
-    pub minimum_hyprland_version: Option<String>,
+    // pub minimum_hyprland_version: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct ConfigModule {
     
-    #[serde(default)]
-    pub enabled:Option<bool>,
+    // #[serde(default)]
+    // pub enabled:Option<bool>,
 
     pub config: PathBuf,
 
-    pub minimum_hyprland_version: Option<String>,
+    // pub minimum_hyprland_version: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -62,10 +62,10 @@ pub struct ConfigLink {
     pub from: PathBuf,
     pub to: PathBuf,
 
-    #[serde(default)]
-    pub ignore: Vec<PathBuf>,
-    #[serde(default)]
-    pub include: Vec<PathBuf>,
+    // #[serde(default)]
+    // pub ignore: Vec<PathBuf>,
+    // #[serde(default)]
+    // pub include: Vec<PathBuf>,
 }
 
 impl Config {

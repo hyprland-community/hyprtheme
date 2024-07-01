@@ -20,7 +20,7 @@ pub struct CliParser{
     // pub themes_dir: PathBuf,
 
     /// path where themes are stored, can be repeated to add multiple directories
-    #[arg(short, long, value_parser=parse_path, default_value="~/.config/hypr/themes/")]
+    #[arg(short, long, value_parser=parse_path, default_value="~/.config/hyprtheme/themes")]
     pub theme_dirs: Vec<PathBuf>,
 
     /// url to raw text files containing a list of themes in json, can be repeated to add multiple urls

@@ -5,6 +5,8 @@ use anyhow::Result;
 
 use git2::build::RepoBuilder;
 
+use crate::helper::sanitize_name;
+
 #[derive(Debug,Clone)]
 pub struct OnlineTheme {
     pub partial: Theme,
@@ -19,7 +21,7 @@ impl OnlineTheme {
 
     pub fn download(self, theme_dir:&PathBuf) -> Result<InstalledTheme> {
         let url = &self.partial.repo;
-        let branch = self.partial.branch.clone().unwrap_or("master".to_string());
+        let branch = sanitize_name(&self.partial.branch.clone().unwrap_or("main".to_string()));
 
         let into = theme_dir.join(&self.partial.name);
 

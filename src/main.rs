@@ -1,7 +1,6 @@
 mod cli;
 mod consts;
-// mod theme;
-mod modules;
+mod theme;
 mod helper;
 
 use anyhow::{Context, Result};
@@ -10,7 +9,7 @@ use cli::{CliParser,CliCommands};
 use expanduser::expanduser;
 use std::{fs, process::ExitCode};
 
-use modules::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
+use theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
 use helper::{identify_offline_theme,identify_theme};
 
 async fn parse_cli() -> Result<()> {
@@ -78,8 +77,8 @@ async fn parse_cli() -> Result<()> {
                         Ok(theme) => {
 
                             match theme.as_any() {
-                                t if t.is::<modules::theme::online::OnlineTheme>() => {
-                                    let theme = t.downcast_ref::<modules::theme::online::OnlineTheme>().unwrap().to_owned();
+                                t if t.is::<theme::online::OnlineTheme>() => {
+                                    let theme = t.downcast_ref::<theme::online::OnlineTheme>().unwrap().to_owned();
                                     println!("Installing theme: {}", theme.get_name());
                                     match theme.download(&theme_dirs[0]) {
                                         Ok(installed) => {
@@ -112,8 +111,8 @@ async fn parse_cli() -> Result<()> {
                 Ok(theme) => {
                     println!("Uninstalling theme: {}", theme.get_name());
                     match theme.as_any() {
-                        t if t.is::<modules::theme::installed::InstalledTheme>() => {
-                            let theme = t.downcast_ref::<modules::theme::installed::InstalledTheme>().unwrap().to_owned();
+                        t if t.is::<theme::installed::InstalledTheme>() => {
+                            let theme = t.downcast_ref::<theme::installed::InstalledTheme>().unwrap().to_owned();
                             match theme.uninstall() {
                                 Ok(_) => {
                                     println!("Theme uninstalled");
@@ -141,8 +140,8 @@ async fn parse_cli() -> Result<()> {
                     println!("Updating theme: {}", theme.get_name());
                     match theme.as_any() {
 
-                        t if t.is::<modules::theme::installed::InstalledTheme>() => {
-                            let theme = t.downcast_ref::<modules::theme::installed::InstalledTheme>().unwrap().to_owned();
+                        t if t.is::<theme::installed::InstalledTheme>() => {
+                            let theme = t.downcast_ref::<theme::installed::InstalledTheme>().unwrap().to_owned();
                             match theme.update() {
                                 Ok(_) => {
                                     println!("Theme updated");
@@ -173,91 +172,6 @@ async fn main() -> ExitCode {
     ensure_default_dirs_exist().expect("Failed to create default directories");
 
     parse_cli().await.expect("Failed to parse CLI arguments");
-
-    // match arguments.args {
-    //     CliFlags::List(arguments) => {
-    //         println!(
-    //             "{}",
-    //             arguments
-    //                 .get_formatted_list()
-    //                 .await
-    //                 .expect("Failed to list the themes")
-    //         );
-    //     }
-
-    //     CliFlags::Install(arguments) => {
-    //         let installed_theme = arguments.install().await.expect("Failed to install theme.");
-
-    //         println!("Installed theme {}", installed_theme.config.meta.name);
-    //     }
-
-    //     CliFlags::Uninstall(arguments) => {
-    //         let installed_theme = installed::get(arguments.hypr_dir.as_ref())
-    //             .await
-    //             .expect("Error retrieving installed theme")
-    //             .expect("No installed theme found");
-
-    //         let name = &installed_theme.config.meta.name.clone();
-
-    //         installed_theme
-    //             .uninstall(arguments.hypr_dir.as_ref())
-    //             .await
-    //             .expect("Failed to uninstall theme");
-
-    //         println!("Succesfully uninstalled theme: {}", &name);
-    //     }
-
-    //     CliFlags::Update(arguments) => {
-    //         let installed_theme = installed::get(arguments.hypr_dir.as_ref())
-    //             .await
-    //             .expect("Error retrieving installed theme")
-    //             .expect("No installed theme found")
-    //             .update(arguments.data_dir.as_ref())
-    //             .await
-    //             .expect("Failed to update theme");
-
-    //         println!(
-    //             "Succesfully updated installed theme: {}",
-    //             &installed_theme.config.meta.name
-    //         );
-    //     }
-
-    //     CliFlags::Remove(arguments) => arguments.remove().await.expect("Failed to remove theme"),
-
-    //     CliFlags::Clean(arguments) => {
-    //         let themes = saved::get_all(arguments.data_dir.as_ref())
-    //             .await
-    //             .expect("Failed to lookup saved themes.");
-
-    //         for theme in themes {
-    //             let name = theme.config.meta.name.clone();
-    //             if theme
-    //                 .is_installed(arguments.hypr_dir.as_ref())
-    //                 .await
-    //                 .expect(format!("Failed to check installed theme: {}", &name).as_str())
-    //             {
-    //                 continue;
-    //             }
-    //             theme
-    //                 .remove()
-    //                 .expect(format!("Failed to remove theme: {}", &name).as_str());
-    //         }
-
-    //         println!("Succesfully clean unused themes.");
-    //     }
-
-    //     CliFlags::UpdateAll(arguments) => {
-    //         let themes = saved::get_all(arguments.data_dir.as_ref())
-    //             .await
-    //             .expect("Failed to lookup saved themes.");
-
-    //         for theme in themes {
-    //             theme.update().expect("Failed to update theme.");
-    //         }
-
-    //         println!("Succesfully updated all themes.");
-    //     }
-    // }
 
     return ExitCode::SUCCESS;
 }

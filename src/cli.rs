@@ -1,10 +1,6 @@
-mod helper;
-mod install;
-mod list;
-mod remove;
-
-use {helper::parse_path,helper::parse_paths, install::InstallArgs, list::List, remove::RemoveArgs};
 use clap::Parser;
+use anyhow::{anyhow, Result};
+use expanduser::expanduser;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -50,10 +46,63 @@ pub enum CliCommands {
     /// Update the installed theme
     Update(UpdateArgs),
 
+    // will replace with flags
     // /// Remove a saved theme from the data directory
     // ///
     // /// Takes a saved theme ID. Use the list command to get the ID.
     // Remove(RemoveArgs),
+}
+
+// #[derive(Parser,Clone)]
+// pub struct RemoveArgs {
+//     /// The name of the theme to remove from the data directory
+//     #[arg(short, long)]
+//     pub theme_name: String,
+
+//     /// The data directory of Hyprtheme, by default in `~/.local/share/hyprtheme/`
+//     #[arg(short, long, value_parser=parse_path)]
+//     pub data_dir: Option<PathBuf>,
+// }
+
+#[derive(Parser,Clone)]
+pub struct List {
+   
+    /// show installed themes
+    #[arg(short,long)]
+    pub installed: bool,
+
+    /// show online themes excluding the ones already installed
+    #[arg(short,long)]
+    pub online: bool,
+
+    /// whether to show already installed themes while listing online themes
+    #[arg(short,long, requires="online")]
+    pub show_installed: bool,
+
+    /// show installed themes that use the legacy format
+    #[arg(short,long)]
+    pub legacy: bool,
+
+    
+}
+
+#[derive(Parser,Clone)]
+pub struct InstallArgs {
+    /// Either:
+    /// - Name of a theme featured on www.hyprland-community.org/hyprtheme/browse
+    /// - Git repository: https://github.com/hyprland-community/hyprtheme
+    /// - Github short-form: author/repo-name
+    // #[arg(short,long,value_parser=ThemeName::parse)]
+    // pub name: ThemeName,
+
+    #[arg(short, long, group = "source")]
+    pub git: Option<String>,
+
+    #[arg(short, long, requires = "git")]
+    pub branch: Option<String>,
+
+    #[arg(group = "source")]
+    pub theme_id: Option<String>,
 }
 
 #[derive(Parser,Clone)]
@@ -75,3 +124,14 @@ pub struct CleanAllArgs {
 }
 
 
+/// Parse an user-inputted path as PathBuf and verify that it exists
+///
+/// Useful for commands like `remove` where a non-existing path would not make sense
+pub fn parse_path(path: &str) -> Result<PathBuf> {
+    let path: PathBuf = expanduser(path).expect("Failed to expand path");
+    if path.try_exists()? {
+        Ok(path)
+    } else {
+        Err(anyhow!(format!("Path does not exist: {}", path.display())))
+    }
+}

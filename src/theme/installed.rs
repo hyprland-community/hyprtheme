@@ -1,142 +1,173 @@
-use super::{
-    helper::create_hyrptheme_source_string, online, saved, toml_config::ParsedThemeConfig,
-};
-use crate::consts::DEFAULT_HYPR_CONFIG_PATH;
-use anyhow::{Context, Result};
-use expanduser::expanduser;
-use std::{
-    fs::{self},
-    path::PathBuf,
-};
+use super::online::OnlineTheme;
+use super::toml_config::Config;
+use super::{Theme,ThemeType,ThemeId};
 
-/// Get the installed theme.
-/// It is an Option type as there might be none installed.
-///
-/// Optionally a hypr config directory can be given to look it up there.
-pub async fn get(hypr_dir: Option<&PathBuf>) -> Result<Option<InstalledTheme>> {
-    let default_config_dir_bind = &expanduser(DEFAULT_HYPR_CONFIG_PATH)?;
-    let config_dir = hypr_dir.unwrap_or(default_config_dir_bind);
-    let hyprtheme_toml_path = config_dir.join("hyprtheme/hyprtheme.toml");
+use std::path::PathBuf;
+use anyhow::Result;
+use git2::Repository;
 
-    if !hyprtheme_toml_path.try_exists()? {
-        return Ok(None);
-    }
-
-    let toml_string = fs::read_to_string(&hyprtheme_toml_path).context(format!(
-        "Failed to read out hyprtheme.toml at: {}",
-        &hyprtheme_toml_path.display()
-    ))?;
-    let config = toml::from_str::<ParsedThemeConfig>(&toml_string).context(format!(
-        "Failed to parse hyprtheme.toml at: {}.\nRead out file:\n{}\n",
-        &hyprtheme_toml_path.display(),
-        &toml_string
-    ))?;
-
-    Ok(Some(InstalledTheme {
-        path: config_dir.clone(),
-        config,
-    }))
-}
-
+#[derive(Debug,Clone)]
 pub struct InstalledTheme {
-    /// Path of the hypr config directory where this theme is installed in
-    path: PathBuf,
-    /// The config which got copied over to `.config/hypr/hyprtheme/theme.toml`
-    pub config: ParsedThemeConfig,
+    pub config: Config,
+    pub path: PathBuf,
+    pub partial: Theme,
+
+    pub parent_dir: PathBuf,
 }
 
 impl InstalledTheme {
-    /// Update the installed theme
-    ///
-    /// Consumes self, as this will overwrite the currently installed theme
-    /// with the updated version
-    pub async fn update(&self, data_dir: Option<&PathBuf>) -> Result<Self> {
-        let saved_result = saved::find_saved(&self.config.meta.get_id(), data_dir)
-            .await
-            .context(
-            "Error looking up stored repository of the installed theme. Try reinstalling it again.",
-        )?;
 
-        // download theme if it is not saved anymore
-        // nessecary if someone downloaded dots which use Hyprtheme and the data dir is not in them.
-        // Also the data dir should not be source controlled as they can be big and there can be many themes
-        let saved = match saved_result {
-            Some(ok) => ok,
-            None => {
-                online::download(
-                    &self.config.meta.repo,
-                    self.config.meta.branch.as_deref(),
-                    data_dir,
-                )
-                .await?
+    pub fn from_dir(path: &PathBuf) -> Result<InstalledTheme> {
+        
+        let config_path = path.join("theme.toml");
+        match Config::from_toml_file(&config_path) {
+            Ok(config) => {
+                Ok(InstalledTheme {
+                    config:config.clone(),
+                    path:config_path.clone(),
+                    parent_dir: path.clone(),
+                    partial: Theme::new(
+                        config.name,
+                        config.repo,
+                        config.branch,
+                        config.desc,
+                        Vec::new(),
+                    ),
+                })
             }
-        };
-
-        saved.update()?.install(Some(&self.path)).await
-    }
-
-    /// Uninstall the installed theme
-    ///
-    /// Consumes `self` as there wont be an installed theme anymore
-    ///
-    /// - hypr_dir: Path to the hypr config directory
-    pub async fn uninstall(self, hypr_dir: Option<&PathBuf>) -> Result<()> {
-        let default_dir = &expanduser(DEFAULT_HYPR_CONFIG_PATH)?;
-        let hypr_dir = hypr_dir.unwrap_or(default_dir);
-        let hyprtheme_dir = hypr_dir.join("hyprtheme/");
-        let hyprland_config_path = hypr_dir.join("hyprland.conf");
-
-        // remove `hyprtheme/` from `hypr` dir
-        fs::remove_dir_all(hyprtheme_dir)
-            .context("Failed to remove /hyprtheme in hypr config directory")?;
-
-        // Remove source string from hyprland.conf
-        let hyprtheme_source_str = create_hyrptheme_source_string(hypr_dir);
-        // Read out hyprland.conf via std::fs::read_to_string("list.txt").unwrap();
-        // Check if hyprtheme.conf is sourced in hyprland.conf, if not, source it
-        let hyprland_config = fs::read_to_string(&hyprland_config_path)
-            .context("Failed to read out hyprland.conf")?;
-        let is_already_sourced = hyprland_config.contains(&hyprtheme_source_str);
-
-        if is_already_sourced {
-            let config_str = hyprland_config.replace(&hyprtheme_source_str.to_string(), "");
-
-            fs::write(hyprland_config_path, config_str)?;
+            Err(e) => {
+                Err(e.into())
+            }
         }
-
-        self.run_cleanup_script(&self.path, hypr_dir)
-            .await
-            .context("Error while running cleanup script")?;
-
-        // TODO
-        // What to do with installed dots?
-        // Restore backup?
-
-        Ok(())
     }
 
-    async fn run_cleanup_script(&self, install_dir: &PathBuf, hypr_dir: &PathBuf) -> Result<()> {
-        let cleanup_path_relative = &self.config.lifetime.cleanup;
-        let cleanup_script_path = &self.path.join(cleanup_path_relative);
-
-        if !cleanup_script_path.try_exists()? {
-            println!("No cleanup script found at: {}", cleanup_path_relative);
-            return Ok(());
+    pub fn from_file(path: &PathBuf) -> Result<InstalledTheme> {
+        match Config::from_toml_file(path) {
+            Ok(config) => Ok(InstalledTheme {
+                config:config.clone(),
+                path:path.clone(),
+                parent_dir: path.parent().unwrap().to_path_buf(),
+                partial: Theme::new(
+                    config.name,
+                    config.repo,
+                    config.branch,
+                    config.desc,
+                    Vec::new(),
+                ),
+            }),
+            Err(e) => Err(e),
         }
-
-        println!("Running cleanup script...");
-
-        std::process::Command::new("sh")
-            .arg("-c")
-            .env("THEME_DIR", &self.path)
-            .env("HYPR_INSTALL_DIR", &install_dir)
-            .env("HYPR_CONFIG_DIR", &hypr_dir)
-            .arg(&cleanup_script_path)
-            .stdout(std::process::Stdio::inherit())
-            .stderr(std::process::Stdio::inherit())
-            .current_dir(&self.path)
-            .output()?;
-
-        Ok(())
     }
+
+    pub fn update(&self) -> Result<()> {
+        let repo = Repository::open(&self.parent_dir)?;
+        let mut remote = repo.find_remote("origin")?;
+        match remote.fetch(&[&self.partial.branch.clone().unwrap_or("master".to_string())], None, None) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                Err(e.into())
+            }
+        }
+    }
+
+    pub fn uninstall(&self) -> Result<OnlineTheme> {
+        let theme = OnlineTheme::from_theme(self.partial.clone());
+        std::fs::remove_dir_all(&self.parent_dir)?;
+        Ok(theme)
+    }
+
+    pub fn get_modules(&self) -> Vec<InstalledTheme> {
+        let mut modules = Vec::new();
+        for module in &self.config.module {
+            let path = self.parent_dir.join(&module.config);
+            match InstalledTheme::from_file(&path) {
+                Ok(theme) => modules.push(theme),
+                Err(_) => continue,
+            }
+        }
+        modules
+    }
+
+    pub fn get_links(&self) -> Vec<(PathBuf,PathBuf)> {
+        let mut links = Vec::new();
+        for link in &self.config.link {
+            links.push((link.from.clone(),link.to.clone()));
+        }
+        links
+    }
+
+    pub fn get_hypr_modules(&self) -> Vec<PathBuf> {
+        let mut configs = Vec::new();
+        for module in &self.config.hypr_module {
+            let path = self.parent_dir.join(&module.config);
+            configs.push(path);
+        }
+        configs
+    }
+
+    pub fn get_hypr_config(&self) -> PathBuf {
+        self.config.theme.config.clone()
+    }
+
+    pub fn load(&self) -> Result<()> {
+        if let Some(load) = &self.config.theme.load {
+            let path = self.parent_dir.join(load);
+            match std::process::Command::new(path).output() {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            }
+        } else {
+            Ok(())
+        }
+    }
+
+    pub fn unload(&self) -> Result<()> {
+        if let Some(unload) = &self.config.theme.unload {
+            let path = self.parent_dir.join(unload);
+            match std::process::Command::new(path).output() {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.into()),
+            }
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl ThemeType for InstalledTheme {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn get_type_string(&self) -> String {
+        "installed".to_string()
+    }
+
+    fn get_id(&self) -> ThemeId {
+        ThemeId{
+            repo: self.partial.repo.clone(),
+            branch: self.partial.branch.clone(),
+        }
+    }
+
+    fn get_name(&self) -> String {
+        self.partial.name.clone()
+    }
+
+    fn get_repo(&self) -> String {
+        self.partial.repo.clone()
+    }
+
+    fn get_branch(&self) -> Option<String> {
+        self.partial.branch.clone()
+    }
+
+    fn get_desc(&self) -> String {
+        self.partial.desc.clone()
+    }
+
+    fn get_images(&self) -> Vec<String> {
+        self.partial.images.clone()
+    }
+
 }

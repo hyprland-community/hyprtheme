@@ -1,7 +1,7 @@
 use std::{f32::consts::E, path::PathBuf};
 use anyhow::Result;
 
-use crate::modules::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
+use crate::theme::{fetch_all, fetch_all_installed, fetch_online, ThemeType};
 
 pub fn sanitize_name(name:&str) -> String{
     let mut name = name.to_string();
